@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/shishamo/C++/ZenithSTG-V/build",
+  "command": "/usr/bin/c++  -I/home/shishamo/C++/ZenithSTG-V/include -std=c++20 -Wall -Wextra -Wpedantic -o CMakeFiles/zenith-stg-v.dir/src/main.cpp.o -c /home/shishamo/C++/ZenithSTG-V/src/main.cpp",
+  "file": "/home/shishamo/C++/ZenithSTG-V/src/main.cpp",
+  "output": "CMakeFiles/zenith-stg-v.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/shishamo/C++/ZenithSTG-V/build",
+  "command": "/usr/bin/c++  -I/home/shishamo/C++/ZenithSTG-V/include -std=c++20 -Wall -Wextra -Wpedantic -o CMakeFiles/zenith-stg-v.dir/src/vec2d.cpp.o -c /home/shishamo/C++/ZenithSTG-V/src/vec2d.cpp",
+  "file": "/home/shishamo/C++/ZenithSTG-V/src/vec2d.cpp",
+  "output": "CMakeFiles/zenith-stg-v.dir/src/vec2d.cpp.o"
+}
+]

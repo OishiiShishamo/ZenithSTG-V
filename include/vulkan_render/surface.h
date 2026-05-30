@@ -1,0 +1,19 @@
+#pragma once
+#ifndef ZENITHSTGV_SRC_VULKAN_RENDER_SURFACE_H_
+#define ZENITHSTGV_SRC_VULKAN_RENDER_SURFACE_H_
+
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
+#include <vulkan/vulkan.h>
+
+#include "window/window.h"
+
+namespace zenithstgv {
+class Surface {
+  public:
+	static void createSurface(SDL_Window *window, VkInstance instance,
+	                          VkSurfaceKHR &surface);
+};
+} // namespace zenithstgv
+
+#endif

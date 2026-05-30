@@ -1,1 +1,0 @@
-/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/zenith-stg-v.dir/link.d "CMakeFiles/zenith-stg-v.dir/src/main.cpp.o" "CMakeFiles/zenith-stg-v.dir/src/vec2d.cpp.o" -o zenith-stg-v  /usr/lib/libvulkan.so /usr/lib/libSDL3.so.0.4.8 /usr/lib/libglm.a

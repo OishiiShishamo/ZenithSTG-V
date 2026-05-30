@@ -1,3 +1,0 @@
-/home/shishamo/C++/ZenithSTG-V/build/CMakeFiles/zenith-stg-v.dir
-/home/shishamo/C++/ZenithSTG-V/build/CMakeFiles/edit_cache.dir
-/home/shishamo/C++/ZenithSTG-V/build/CMakeFiles/rebuild_cache.dir

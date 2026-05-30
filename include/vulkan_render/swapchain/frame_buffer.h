@@ -15,6 +15,8 @@ class FrameBuffer {
 	                   std::vector<VkImageView> &swap_chain_image_views,
 	                   std::vector<VkFramebuffer> &swap_chain_framebuffers,
 	                   VkRenderPass render_pass);
+	static void cleanup(VkDevice device,
+	                    std::vector<VkFramebuffer> &framebuffers);
 };
 } // namespace zenithstgv
 

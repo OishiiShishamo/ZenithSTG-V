@@ -31,4 +31,14 @@ void FrameBuffer::createFramebuffers(
 		}
 	}
 }
+
+void FrameBuffer::cleanup(VkDevice device,
+                          std::vector<VkFramebuffer> &framebuffers) {
+	for (auto framebuffer : framebuffers) {
+		if (framebuffer != VK_NULL_HANDLE) {
+			vkDestroyFramebuffer(device, framebuffer, nullptr);
+		}
+	}
+	framebuffers.clear();
+}
 } // namespace zenithstgv

@@ -110,6 +110,13 @@ SwapChain::querySwapChainSupport(VkPhysicalDevice device,
 	return details;
 }
 
+void SwapChain::cleanup(VkDevice device, VkSwapchainKHR &swap_chain) {
+	if (swap_chain != VK_NULL_HANDLE) {
+		vkDestroySwapchainKHR(device, swap_chain, nullptr);
+		swap_chain = VK_NULL_HANDLE;
+	}
+}
+
 VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(
     const std::vector<VkSurfaceFormatKHR> &availableFormats) {
 	for (const auto &availableFormat : availableFormats) {

@@ -37,4 +37,14 @@ void ImageView::createImageViews(
 		}
 	}
 }
+
+void ImageView::cleanup(VkDevice device,
+                        std::vector<VkImageView> &image_views) {
+	for (auto imageView : image_views) {
+		if (imageView != VK_NULL_HANDLE) {
+			vkDestroyImageView(device, imageView, nullptr);
+		}
+	}
+	image_views.clear();
+}
 } // namespace zenithstgv

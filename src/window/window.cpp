@@ -1,5 +1,6 @@
 #include "window/window.h"
 
+#include <SDL3/SDL_video.h>
 #include <memory>
 
 #include <SDL3/SDL.h>
@@ -15,9 +16,9 @@ void initWindow(WindowPtr &window) {
 		throw std::runtime_error(SDL_GetError());
 	}
 
-	window.reset(
-	    SDL_CreateWindow(kDefaultWindowTitle, kDefaultResolution.GetX(),
-	                     kDefaultResolution.GetY(), SDL_WINDOW_VULKAN));
+	window.reset(SDL_CreateWindow(
+	    kDefaultWindowTitle, kDefaultResolution.GetX(),
+	    kDefaultResolution.GetY(), SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE));
 
 	if (!window) {
 		std::cerr << "SDL_CreateWindow failed: " << SDL_GetError() << '\n';

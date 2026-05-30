@@ -14,6 +14,7 @@ class ImageView {
 	createImageViews(VkDevice device, std::vector<VkImage> &swap_chain_images,
 	                 VkFormat &swap_chain_image_format,
 	                 std::vector<VkImageView> &swap_chain_image_views);
+	static void cleanup(VkDevice device, std::vector<VkImageView> &image_views);
 };
 } // namespace zenithstgv
 #endif

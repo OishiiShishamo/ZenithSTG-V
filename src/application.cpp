@@ -45,10 +45,10 @@ void Application::initVulkan() {
 	                                swap_chain_framebuffers_, render_pass_);
 	Command::createCommandPool(device_, physical_device_, surface_,
 	                           command_pool_);
-	Command::createCommandBuffer(device_, command_pool_, command_buffer_);
-	SyncObjects::createSyncObjects(device_, image_available_semaphore_,
-	                               render_finished_semaphore_,
-	                               in_flight_fence_);
+	Command::createCommandBuffer(device_, command_pool_, command_buffers_);
+	SyncObjects::createSyncObjects(
+	    device_, swap_chain_, image_available_semaphores_,
+	    render_finished_semaphores_, in_flight_fences_);
 }
 
 void Application::mainLoop() {
@@ -62,20 +62,31 @@ void Application::mainLoop() {
 				running = false;
 			}
 		}
-		Draw::drawFrame(device_, swap_chain_, swap_chain_extent_,
-		                swap_chain_framebuffers_, render_pass_,
-		                graphics_pipeline_, command_buffer_, graphics_queue_,
-		                present_queue_, image_available_semaphore_,
-		                render_finished_semaphore_, in_flight_fence_);
+
+		if (!running)
+			break;
+
+		if (Draw::drawFrame(
+		        device_, swap_chain_, swap_chain_extent_,
+		        swap_chain_framebuffers_, render_pass_, graphics_pipeline_,
+		        command_buffers_, graphics_queue_, present_queue_,
+		        image_available_semaphores_, render_finished_semaphores_,
+		        in_flight_fences_, current_frame_)) {
+			recreateSwapChain();
+		}
+		current_frame_ = (current_frame_ + 1) % kMaxFramesInFlight;
 	}
 
 	vkDeviceWaitIdle(device_);
 }
 
 void Application::cleanup() {
-	vkDestroySemaphore(device_, image_available_semaphore_, nullptr);
-	vkDestroySemaphore(device_, render_finished_semaphore_, nullptr);
-	vkDestroyFence(device_, in_flight_fence_, nullptr);
+	for (auto X : image_available_semaphores_)
+		vkDestroySemaphore(device_, X, nullptr);
+	for (auto X : render_finished_semaphores_)
+		vkDestroySemaphore(device_, X, nullptr);
+	for (auto X : in_flight_fences_)
+		vkDestroyFence(device_, X, nullptr);
 	vkDestroyCommandPool(device_, command_pool_, nullptr);
 
 	for (auto framebuffer : swap_chain_framebuffers_) {
@@ -110,5 +121,41 @@ void Application::cleanup() {
 		instance_ = VK_NULL_HANDLE;
 	}
 	SDL_Quit();
+}
+
+void Application::recreateSwapChain() {
+	int width = 0, height = 0;
+	SDL_GetWindowSizeInPixels(window_.get(), &width, &height);
+	if (width == 0 || height == 0)
+		return;
+
+	vkDeviceWaitIdle(device_);
+
+	for (auto s : image_available_semaphores_)
+		vkDestroySemaphore(device_, s, nullptr);
+	for (auto s : render_finished_semaphores_)
+		vkDestroySemaphore(device_, s, nullptr);
+	for (auto f : in_flight_fences_)
+		vkDestroyFence(device_, f, nullptr);
+	image_available_semaphores_.clear();
+	render_finished_semaphores_.clear();
+	in_flight_fences_.clear();
+
+	FrameBuffer::cleanup(device_, swap_chain_framebuffers_);
+	ImageView::cleanup(device_, swap_chain_image_views_);
+	SwapChain::cleanup(device_, swap_chain_);
+
+	SwapChain::createSwapChain(window_.get(), device_, physical_device_,
+	                           surface_, swap_chain_, swap_chain_images_,
+	                           swap_chain_image_format_, swap_chain_extent_);
+	ImageView::createImageViews(device_, swap_chain_images_,
+	                            swap_chain_image_format_,
+	                            swap_chain_image_views_);
+	FrameBuffer::createFramebuffers(device_, swap_chain_extent_,
+	                                swap_chain_image_views_,
+	                                swap_chain_framebuffers_, render_pass_);
+	SyncObjects::createSyncObjects(
+	    device_, swap_chain_, image_available_semaphores_,
+	    render_finished_semaphores_, in_flight_fences_);
 }
 } // namespace zenithstgv

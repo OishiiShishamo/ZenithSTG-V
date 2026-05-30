@@ -12,14 +12,17 @@
 namespace zenithstgv {
 class Draw {
   public:
-	static void
-	drawFrame(VkDevice &device, VkSwapchainKHR swap_chain,
-	          VkExtent2D swap_chain_extent,
-	          std::vector<VkFramebuffer> &swap_chain_framebuffers,
-	          VkRenderPass render_pass, VkPipeline graphics_pipeline,
-	          VkCommandBuffer &command_buffer, VkQueue graphics_queue,
-	          VkQueue present_queue, VkSemaphore image_available_semaphore,
-	          VkSemaphore render_finished_semaphore, VkFence &in_flight_fence);
+	static bool drawFrame(VkDevice &device, VkSwapchainKHR swap_chain,
+	                      VkExtent2D swap_chain_extent,
+	                      std::vector<VkFramebuffer> &swap_chain_framebuffers,
+	                      VkRenderPass render_pass,
+	                      VkPipeline graphics_pipeline,
+	                      std::vector<VkCommandBuffer> &command_buffers,
+	                      VkQueue graphics_queue, VkQueue present_queue,
+	                      std::vector<VkSemaphore> &image_available_semaphores,
+	                      std::vector<VkSemaphore> &render_finished_semaphores,
+	                      std::vector<VkFence> &in_flight_fences,
+	                      uint32_t current_frame);
 };
 } // namespace zenithstgv
 

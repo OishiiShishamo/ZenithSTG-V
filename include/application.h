@@ -44,15 +44,17 @@ class Application {
 	VkPipeline graphics_pipeline_;
 
 	VkCommandPool command_pool_;
-	VkCommandBuffer command_buffer_;
+	std::vector<VkCommandBuffer> command_buffers_;
 
-	VkSemaphore image_available_semaphore_;
-	VkSemaphore render_finished_semaphore_;
-	VkFence in_flight_fence_;
+	std::vector<VkSemaphore> image_available_semaphores_;
+	std::vector<VkSemaphore> render_finished_semaphores_;
+	std::vector<VkFence> in_flight_fences_;
+	uint32_t current_frame_ = 0;
 
 	void initVulkan();
 	void mainLoop();
 	void cleanup();
+	void recreateSwapChain();
 };
 } // namespace zenithstgv
 #endif

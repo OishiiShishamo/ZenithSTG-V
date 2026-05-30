@@ -8,46 +8,54 @@
 #include "vulkan_render/command.h"
 
 namespace zenithstgv {
-void Draw::drawFrame(VkDevice &device, VkSwapchainKHR swap_chain,
+bool Draw::drawFrame(VkDevice &device, VkSwapchainKHR swap_chain,
                      VkExtent2D swap_chain_extent,
                      std::vector<VkFramebuffer> &swap_chain_framebuffers,
                      VkRenderPass render_pass, VkPipeline graphics_pipeline,
-                     VkCommandBuffer &command_buffer, VkQueue graphics_queue,
-                     VkQueue present_queue,
-                     VkSemaphore image_available_semaphore,
-                     VkSemaphore render_finished_semaphore,
-                     VkFence &in_flight_fence) {
-	vkWaitForFences(device, 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
-	vkResetFences(device, 1, &in_flight_fence);
+                     std::vector<VkCommandBuffer> &command_buffers,
+                     VkQueue graphics_queue, VkQueue present_queue,
+                     std::vector<VkSemaphore> &image_available_semaphores,
+                     std::vector<VkSemaphore> &render_finished_semaphores,
+                     std::vector<VkFence> &in_flight_fences,
+                     uint32_t current_frame) {
+
+	vkWaitForFences(device, 1, &in_flight_fences[current_frame], VK_TRUE,
+	                UINT64_MAX);
+	vkResetFences(device, 1, &in_flight_fences[current_frame]);
 
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(device, swap_chain, UINT64_MAX,
-	                      image_available_semaphore, VK_NULL_HANDLE,
-	                      &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(
+	    device, swap_chain, UINT64_MAX,
+	    image_available_semaphores[current_frame], VK_NULL_HANDLE, &imageIndex);
 
-	vkResetCommandBuffer(command_buffer, 0);
-	Command::recordCommandBuffer(command_buffer, imageIndex, swap_chain_extent,
-	                             swap_chain_framebuffers, render_pass,
-	                             graphics_pipeline);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		return true;
+	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		throw std::runtime_error("failed to acquire swap chain image!");
+
+	vkResetCommandBuffer(command_buffers[current_frame], 0);
+	Command::recordCommandBuffer(command_buffers[current_frame], imageIndex,
+	                             swap_chain_extent, swap_chain_framebuffers,
+	                             render_pass, graphics_pipeline);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[] = {image_available_semaphore};
+	VkSemaphore waitSemaphores[] = {image_available_semaphores[current_frame]};
 	VkPipelineStageFlags waitStages[] = {
 	    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &command_buffer;
+	submitInfo.pCommandBuffers = &command_buffers[current_frame];
 
-	VkSemaphore signalSemaphores[] = {render_finished_semaphore};
+	VkSemaphore signalSemaphores[] = {render_finished_semaphores[imageIndex]};
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit(graphics_queue, 1, &submitInfo, in_flight_fence) !=
-	    VK_SUCCESS) {
+	if (vkQueueSubmit(graphics_queue, 1, &submitInfo,
+	                  in_flight_fences[current_frame]) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
 
@@ -61,6 +69,12 @@ void Draw::drawFrame(VkDevice &device, VkSwapchainKHR swap_chain,
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &imageIndex;
 
-	vkQueuePresentKHR(present_queue, &presentInfo);
+	result = vkQueuePresentKHR(present_queue, &presentInfo);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+		return true;
+	if (result != VK_SUCCESS)
+		throw std::runtime_error("failed to present swap chain image!");
+
+	return false;
 }
 } // namespace zenithstgv

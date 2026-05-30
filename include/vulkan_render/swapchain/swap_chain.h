@@ -30,6 +30,8 @@ class SwapChain {
 	static SwapChainSupportDetails
 	querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 
+	static void cleanup(VkDevice device, VkSwapchainKHR &swap_chain);
+
   private:
 	static VkSurfaceFormatKHR chooseSwapSurfaceFormat(
 	    const std::vector<VkSurfaceFormatKHR> &availableFormats);

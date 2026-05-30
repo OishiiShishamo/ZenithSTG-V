@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include "main.h"
 #include "vulkan_render/queue_family.h"
 
 namespace zenithstgv {
@@ -25,15 +26,19 @@ void Command::createCommandPool(VkDevice device,
 	}
 }
 
-void Command::createCommandBuffer(VkDevice device, VkCommandPool command_pool,
-                                  VkCommandBuffer &command_buffer) {
+void Command::createCommandBuffer(
+    VkDevice device, VkCommandPool command_pool,
+    std::vector<VkCommandBuffer> &command_buffers) {
+	command_buffers.resize(kMaxFramesInFlight);
+
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = command_pool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = 1;
+	allocInfo.commandBufferCount =
+	    static_cast<uint32_t>(command_buffers.size());
 
-	if (vkAllocateCommandBuffers(device, &allocInfo, &command_buffer) !=
+	if (vkAllocateCommandBuffers(device, &allocInfo, command_buffers.data()) !=
 	    VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}

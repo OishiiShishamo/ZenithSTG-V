@@ -15,8 +15,9 @@ class Command {
 	                              VkPhysicalDevice physical_device,
 	                              VkSurfaceKHR surface,
 	                              VkCommandPool &command_pool);
-	static void createCommandBuffer(VkDevice device, VkCommandPool command_pool,
-	                                VkCommandBuffer &command_buffer);
+	static void
+	createCommandBuffer(VkDevice device, VkCommandPool command_pool,
+	                    std::vector<VkCommandBuffer> &command_buffers);
 	static void
 	recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 	                    VkExtent2D swap_chain_extent,

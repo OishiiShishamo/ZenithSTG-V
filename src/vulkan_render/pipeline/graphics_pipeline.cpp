@@ -6,12 +6,13 @@
 #include <vulkan/vulkan.h>
 
 #include "utility/read_file.h"
+#include "vertex.h"
 
 namespace zenithstgv {
-void GraphicsPipeline::createGraphicsPipeline(VkDevice device,
-                                              VkRenderPass render_pass,
-                                              VkPipelineLayout &pipeline_layout,
-                                              VkPipeline &graphics_pipeline) {
+void GraphicsPipeline::createGraphicsPipeline(
+    VkDevice device, VkRenderPass render_pass,
+    VkDescriptorSetLayout descriptor_set_layout,
+    VkPipelineLayout &pipeline_layout, VkPipeline &graphics_pipeline) {
 	auto vertShaderCode = Utility::ReadFile("shaders/basic_vert.spv");
 	auto fragShaderCode = Utility::ReadFile("shaders/basic_frag.spv");
 
@@ -37,11 +38,17 @@ void GraphicsPipeline::createGraphicsPipeline(VkDevice device,
 	VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo,
 	                                                  fragShaderStageInfo};
 
+	auto bindingDescription = Vertex::getBindingDescription();
+	auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType =
 	    VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.vertexAttributeDescriptionCount =
+	    static_cast<uint32_t>(attributeDescriptions.size());
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType =
@@ -92,10 +99,18 @@ void GraphicsPipeline::createGraphicsPipeline(VkDevice device,
 	    static_cast<uint32_t>(dynamicStates.size());
 	dynamicState.pDynamicStates = dynamicStates.data();
 
+	VkPushConstantRange pushConstantRange{};
+	pushConstantRange.stageFlags =
+	    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(float);
+
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
-	pipelineLayoutInfo.pushConstantRangeCount = 0;
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &descriptor_set_layout;
+	pipelineLayoutInfo.pushConstantRangeCount = 1;
+	pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
 	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr,
 	                           &pipeline_layout) != VK_SUCCESS) {

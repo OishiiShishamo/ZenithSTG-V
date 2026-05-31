@@ -48,7 +48,10 @@ void Command::recordCommandBuffer(
     VkCommandBuffer commandBuffer, uint32_t imageIndex,
     VkExtent2D swap_chain_extent,
     std::vector<VkFramebuffer> &swap_chain_framebuffers,
-    VkRenderPass render_pass, VkPipeline graphics_pipeline) {
+    VkRenderPass render_pass, VkPipeline graphics_pipeline,
+    VkPipelineLayout pipeline_layout, VkBuffer vertex_buffer,
+    VkBuffer index_buffer, uint32_t indices_size,
+    VkDescriptorSet descriptor_set, float elapsed_time) {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -87,7 +90,18 @@ void Command::recordCommandBuffer(
 	scissor.extent = swap_chain_extent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	VkBuffer vertexBuffers[] = {vertex_buffer};
+	VkDeviceSize offsets[] = {0};
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+	vkCmdBindIndexBuffer(commandBuffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+	                        pipeline_layout, 0, 1, &descriptor_set, 0, nullptr);
+	vkCmdPushConstants(commandBuffer, pipeline_layout,
+	                   VK_SHADER_STAGE_VERTEX_BIT |
+	                       VK_SHADER_STAGE_FRAGMENT_BIT,
+	                   0, sizeof(float), &elapsed_time);
+	vkCmdDrawIndexed(commandBuffer, indices_size, 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 

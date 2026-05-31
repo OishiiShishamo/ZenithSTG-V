@@ -1,6 +1,6 @@
 #pragma once
-#ifndef ZENITHSTGV_SRC_UTILITY_READ_FILE_H_
-#define ZENITHSTGV_SRC_UTILITY_READ_FILE_H_
+#ifndef ZENITHSTGV_INCLUDE_UTILITY_READ_FILE_H_
+#define ZENITHSTGV_INCLUDE_UTILITY_READ_FILE_H_
 
 #include <cstdio>
 #include <fstream>

@@ -5,8 +5,8 @@
  */
 
 #pragma once
-#ifndef ZENITHSTGV_SRC_VEC2D_H_
-#define ZENITHSTGV_SRC_VEC2D_H_
+#ifndef ZENITHSTGV_INCLUDE_VEC2D_H_
+#define ZENITHSTGV_INCLUDE_VEC2D_H_
 
 #include <array>
 #include <cmath>

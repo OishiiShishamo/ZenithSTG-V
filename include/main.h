@@ -1,6 +1,6 @@
 #pragma once
-#ifndef ZENITHSTGV_SRC_MAIN_H_
-#define ZENITHSTGV_SRC_MAIN_H_
+#ifndef ZENITHSTGV_INCLUDE_MAIN_H_
+#define ZENITHSTGV_INCLUDE_MAIN_H_
 
 #include <algorithm>
 #include <cstdint>

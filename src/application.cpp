@@ -8,11 +8,14 @@
 #include <vulkan/vulkan.h>
 
 #include "main.h"
+#include "vertex.h"
 #include "window/window.h"
 
 #include "vulkan_render/command.h"
+#include "vulkan_render/descriptor.h"
 #include "vulkan_render/device.h"
 #include "vulkan_render/draw.h"
+#include "vulkan_render/index_buffer.h"
 #include "vulkan_render/instance.h"
 #include "vulkan_render/pipeline/graphics_pipeline.h"
 #include "vulkan_render/pipeline/render_pass.h"
@@ -21,6 +24,10 @@
 #include "vulkan_render/swapchain/image_view.h"
 #include "vulkan_render/swapchain/swap_chain.h"
 #include "vulkan_render/sync_objects.h"
+#include "vulkan_render/texture.h"
+#include "vulkan_render/vertex_buffer.h"
+
+#include "utility/time_utl.h"
 
 namespace zenithstgv {
 
@@ -36,10 +43,12 @@ void Application::initVulkan() {
 	ImageView::createImageViews(device_, swap_chain_images_,
 	                            swap_chain_image_format_,
 	                            swap_chain_image_views_);
+	Descriptor::createDescriptorSetLayout(device_, descriptor_set_layout_);
 	RenderPass::createRenderPass(device_, swap_chain_image_format_,
 	                             render_pass_);
 	GraphicsPipeline::createGraphicsPipeline(
-	    device_, render_pass_, pipeline_layout_, graphics_pipeline_);
+	    device_, render_pass_, descriptor_set_layout_, pipeline_layout_,
+	    graphics_pipeline_);
 	FrameBuffer::createFramebuffers(device_, swap_chain_extent_,
 	                                swap_chain_image_views_,
 	                                swap_chain_framebuffers_, render_pass_);
@@ -49,12 +58,31 @@ void Application::initVulkan() {
 	SyncObjects::createSyncObjects(
 	    device_, swap_chain_, image_available_semaphores_,
 	    render_finished_semaphores_, in_flight_fences_);
+	VertexBuffer::createVertexBuffer(device_, physical_device_, vertices_,
+	                                 vertex_buffer_, vertex_buffer_memory_);
+	IndexBuffer::createIndexBuffer(device_, physical_device_, indices_,
+	                               index_buffer_, index_buffer_memory_);
+	Texture::createTextureImage(device_, physical_device_, command_pool_,
+	                            graphics_queue_, "textures/test.png",
+	                            texture_image_, texture_image_memory_);
+	Texture::createTextureImageView(device_, texture_image_,
+	                                texture_image_view_);
+	Texture::createTextureSampler(device_, physical_device_, texture_sampler_);
+	Descriptor::createDescriptorPool(device_, descriptor_pool_);
+	Descriptor::createDescriptorSet(device_, descriptor_pool_,
+	                                descriptor_set_layout_, texture_image_view_,
+	                                texture_sampler_, descriptor_set_);
 }
 
 void Application::mainLoop() {
 	bool running = true;
+	double elapsed_time = 0.0;
+
+	TimeUtl::StartTimer();
 
 	while (running) {
+		TimeUtl::ElapsedTime();
+		elapsed_time = TimeUtl::NSec2Double(TimeUtl::Timer());
 		SDL_Event event;
 
 		while (SDL_PollEvent(&event)) {
@@ -66,21 +94,28 @@ void Application::mainLoop() {
 		if (!running)
 			break;
 
-		if (Draw::drawFrame(
-		        device_, swap_chain_, swap_chain_extent_,
-		        swap_chain_framebuffers_, render_pass_, graphics_pipeline_,
-		        command_buffers_, graphics_queue_, present_queue_,
-		        image_available_semaphores_, render_finished_semaphores_,
-		        in_flight_fences_, current_frame_)) {
+		if (Draw::drawFrame(device_, swap_chain_, swap_chain_extent_,
+		                    swap_chain_framebuffers_, render_pass_,
+		                    graphics_pipeline_, pipeline_layout_,
+		                    command_buffers_, graphics_queue_, present_queue_,
+		                    image_available_semaphores_,
+		                    render_finished_semaphores_, in_flight_fences_,
+		                    current_frame_, vertex_buffer_, index_buffer_,
+		                    indices_.size(), descriptor_set_, elapsed_time)) {
 			recreateSwapChain();
 		}
 		current_frame_ = (current_frame_ + 1) % kMaxFramesInFlight;
+		TimeUtl::FrameWait();
 	}
 
 	vkDeviceWaitIdle(device_);
 }
 
 void Application::cleanup() {
+	Descriptor::cleanup(device_, descriptor_pool_, descriptor_set_layout_);
+	Texture::cleanup(device_, texture_image_, texture_image_memory_,
+	                 texture_image_view_, texture_sampler_);
+	IndexBuffer::cleanup(device_, index_buffer_, index_buffer_memory_);
 	for (auto X : image_available_semaphores_)
 		vkDestroySemaphore(device_, X, nullptr);
 	for (auto X : render_finished_semaphores_)

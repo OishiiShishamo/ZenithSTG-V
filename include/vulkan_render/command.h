@@ -1,6 +1,6 @@
 #pragma once
-#ifndef ZENITHSTGV_SRC_COMMAND_H_
-#define ZENITHSTGV_SRC_COMMAND_H_
+#ifndef ZENITHSTGV_INCLUDE_COMMAND_H_
+#define ZENITHSTGV_INCLUDE_COMMAND_H_
 
 #include <stdexcept>
 
@@ -22,7 +22,11 @@ class Command {
 	recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex,
 	                    VkExtent2D swap_chain_extent,
 	                    std::vector<VkFramebuffer> &swap_chain_framebuffers,
-	                    VkRenderPass render_pass, VkPipeline graphics_pipeline);
+	                    VkRenderPass render_pass, VkPipeline graphics_pipeline,
+	                    VkPipelineLayout pipeline_layout,
+	                    VkBuffer vertex_buffer, VkBuffer index_buffer,
+	                    uint32_t indices_size, VkDescriptorSet descriptor_set,
+	                    float elapsed_time);
 };
 } // namespace zenithstgv
 

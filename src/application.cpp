@@ -116,6 +116,7 @@ void Application::cleanup() {
 	Descriptor::cleanup(device_, descriptor_pool_, descriptor_set_layout_);
 	Texture::cleanup(device_, texture_image_, texture_image_memory_,
 	                 texture_image_view_, texture_sampler_);
+	VertexBuffer::cleanup(device_, vertex_buffer_, vertex_buffer_memory_);
 	IndexBuffer::cleanup(device_, index_buffer_, index_buffer_memory_);
 	for (auto X : image_available_semaphores_)
 		vkDestroySemaphore(device_, X, nullptr);

@@ -20,7 +20,7 @@ vec4 hsv2rgb(vec4 c)
 
 void main() {
 	vec4 col = texture(texSampler, fragTexCoord);
-	col *= hsv2rgb(vec4(push.iTime * 0.25, 1., 1., 1.));
-	col /= hsv2rgb(vec4(fract(fragTexCoord.x + (push.iTime / 4.0)), 1., 1., 1.));
+	col += col * hsv2rgb(vec4(push.iTime * 0.25, 1., 1.5, 1.));
+	col /= hsv2rgb(vec4(fract(fragTexCoord.x * fragTexCoord.y + (push.iTime / 4.0)), 1., 1., 1.));
     outColor = col;
 }

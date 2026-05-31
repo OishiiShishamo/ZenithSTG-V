@@ -78,11 +78,12 @@ void Application::mainLoop() {
 	bool running = true;
 	double elapsed_time = 0.0;
 
-	TimeUtl::StartTimer();
+	TimeUtl time_mng;
+	time_mng.StartTimer();
 
 	while (running) {
-		TimeUtl::ElapsedTime();
-		elapsed_time = TimeUtl::NSec2Double(TimeUtl::Timer());
+		time_mng.ElapsedTime();
+		elapsed_time = time_mng.NSec2Double(time_mng.Timer());
 		SDL_Event event;
 
 		while (SDL_PollEvent(&event)) {
@@ -105,7 +106,7 @@ void Application::mainLoop() {
 			recreateSwapChain();
 		}
 		current_frame_ = (current_frame_ + 1) % kMaxFramesInFlight;
-		TimeUtl::FrameWait();
+		time_mng.FrameWait();
 	}
 
 	vkDeviceWaitIdle(device_);

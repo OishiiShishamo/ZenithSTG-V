@@ -9,29 +9,26 @@
 #include "main.h"
 
 namespace zenithstgv {
-extern long long t;
-extern long long fps;
-
 class TimeUtl {
   public:
-	static long long target_t_;
+	long long t = 0;
+	long long fps = 60;
+	long long target_t_ = 0;
 
-	static void InitTimeUtl();
-
-	static void StartTimer();
-	static void StopTimer();
-	static void ResetTimer();
-	static std::chrono::milliseconds NSec2MSec(std::chrono::nanoseconds ns);
-	static double NSec2Double(std::chrono::nanoseconds);
-	static std::chrono::nanoseconds Timer();
-	static void ElapsedTime();
-	static void FrameWait();
+	void StartTimer();
+	void StopTimer();
+	void ResetTimer();
+	std::chrono::milliseconds NSec2MSec(std::chrono::nanoseconds ns);
+	double NSec2Double(std::chrono::nanoseconds);
+	std::chrono::nanoseconds Timer();
+	void ElapsedTime();
+	void FrameWait();
 
   private:
-	static std::chrono::nanoseconds last_frame_time_;
-	static std::chrono::nanoseconds elapsedus_;
-	static std::chrono::high_resolution_clock::time_point start_time_;
-	static std::chrono::nanoseconds frame_duration_;
+	std::chrono::nanoseconds last_frame_time_;
+	std::chrono::nanoseconds elapsedus_;
+	std::chrono::high_resolution_clock::time_point start_time_;
+	std::chrono::nanoseconds frame_duration_;
 };
 
 extern TimeUtl time_mng_;

@@ -5,22 +5,6 @@
 #include <thread>
 
 namespace zenithstgv {
-long long t = 0;
-long long fps = 60;
-long long TimeUtl::target_t_ = 0;
-std::chrono::nanoseconds TimeUtl::last_frame_time_ =
-    std::chrono::nanoseconds(0);
-std::chrono::nanoseconds TimeUtl::elapsedus_ = std::chrono::nanoseconds(0);
-std::chrono::high_resolution_clock::time_point TimeUtl::start_time_;
-std::chrono::nanoseconds TimeUtl::frame_duration_ = std::chrono::nanoseconds(0);
-
-void TimeUtl::InitTimeUtl() {
-	target_t_ = 0;
-	last_frame_time_ = std::chrono::nanoseconds(0);
-	elapsedus_ = std::chrono::nanoseconds(0);
-	frame_duration_ = std::chrono::nanoseconds(1000000000 / fps);
-}
-
 void TimeUtl::StartTimer() {
 	start_time_ = std::chrono::high_resolution_clock::now();
 	last_frame_time_ = std::chrono::nanoseconds(0);

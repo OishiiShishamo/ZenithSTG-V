@@ -36,7 +36,6 @@ class Application {
 	void run() {
 		initWindow(window_);
 		initVulkan();
-		TimeUtl::InitTimeUtl();
 		mainLoop();
 		cleanup();
 	}

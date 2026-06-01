@@ -3,65 +3,50 @@
 #include <cstring>
 #include <stdexcept>
 
+#include <vulkan/vulkan.hpp>
+
 namespace zenithstgv {
-void VertexBuffer::createVertexBuffer(VkDevice device,
-                                      VkPhysicalDevice physical_device,
-                                      const std::vector<Vertex> &vertices,
-                                      VkBuffer &vertex_buffer,
-                                      VkDeviceMemory &vertex_buffer_memory) {
+void VertexBuffer::createVertexBuffer(
+    const vk::Device &device, const vk::PhysicalDevice physical_device,
+    const std::vector<Vertex> &vertices, vk::UniqueBuffer &vertex_buffer,
+    vk::UniqueDeviceMemory &vertex_buffer_memory) {
 
-	VkBufferCreateInfo bufferInfo{};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	const vk::DeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
-	if (vkCreateBuffer(device, &bufferInfo, nullptr, &vertex_buffer) !=
-	    VK_SUCCESS) {
-		throw std::runtime_error("failed to create vertex buffer!");
-	}
+	const vk::BufferCreateInfo bufferInfo{
+	    {},
+	    bufferSize,
+	    vk::BufferUsageFlagBits::eVertexBuffer,
+	    vk::SharingMode::eExclusive};
 
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(device, vertex_buffer, &memRequirements);
+	vertex_buffer = device.createBufferUnique(bufferInfo);
 
-	VkMemoryAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex =
+	const auto memRequirements =
+	    device.getBufferMemoryRequirements(vertex_buffer.get());
+
+	const vk::MemoryAllocateInfo allocInfo{
+	    memRequirements.size,
 	    findMemoryType(physical_device, memRequirements.memoryTypeBits,
-	                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-	                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	                   vk::MemoryPropertyFlagBits::eHostVisible |
+	                       vk::MemoryPropertyFlagBits::eHostCoherent)};
 
-	if (vkAllocateMemory(device, &allocInfo, nullptr, &vertex_buffer_memory) !=
-	    VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate vertex buffer memory!");
-	}
+	vertex_buffer_memory = device.allocateMemoryUnique(allocInfo);
 
-	vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);
+	device.bindBufferMemory(vertex_buffer.get(), vertex_buffer_memory.get(), 0);
 
-	void *data;
-	vkMapMemory(device, vertex_buffer_memory, 0, bufferInfo.size, 0, &data);
-	memcpy(data, vertices.data(), (size_t)bufferInfo.size);
-	vkUnmapMemory(device, vertex_buffer_memory);
+	void *data = device.mapMemory(vertex_buffer_memory.get(), 0, bufferSize);
+
+	std::memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
+
+	device.unmapMemory(vertex_buffer_memory.get());
 }
 
-void VertexBuffer::cleanup(VkDevice device, VkBuffer &vertex_buffer,
-                           VkDeviceMemory &vertex_buffer_memory) {
-	if (vertex_buffer != VK_NULL_HANDLE) {
-		vkDestroyBuffer(device, vertex_buffer, nullptr);
-		vertex_buffer = VK_NULL_HANDLE;
-	}
-	if (vertex_buffer_memory != VK_NULL_HANDLE) {
-		vkFreeMemory(device, vertex_buffer_memory, nullptr);
-		vertex_buffer_memory = VK_NULL_HANDLE;
-	}
-}
+uint32_t
+VertexBuffer::findMemoryType(const vk::PhysicalDevice physical_device,
+                             const uint32_t type_filter,
+                             const vk::MemoryPropertyFlags properties) {
 
-uint32_t VertexBuffer::findMemoryType(VkPhysicalDevice physical_device,
-                                      uint32_t type_filter,
-                                      VkMemoryPropertyFlags properties) {
-	VkPhysicalDeviceMemoryProperties memProperties;
-	vkGetPhysicalDeviceMemoryProperties(physical_device, &memProperties);
+	const auto memProperties = physical_device.getMemoryProperties();
 
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
 		if ((type_filter & (1 << i)) &&

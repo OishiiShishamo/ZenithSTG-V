@@ -7,27 +7,20 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "main.h"
+#include "vulkan/vulkan.hpp"
 
 namespace zenithstgv {
-void Instance::createInstance(VkInstance &instance) {
+void Instance::createInstance(vk::UniqueInstance &instance) {
 	if (enableValidationLayers && !checkValidationLayerSupport())
 		throw std::runtime_error(
 		    "validation layers requested, but not available!");
 
-	VkApplicationInfo appInfo{};
-	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pApplicationName = kGameName;
-	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.pEngineName = "ZenithSTG-V";
-	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_3;
-
-	VkInstanceCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	createInfo.pApplicationInfo = &appInfo;
+	vk::ApplicationInfo appInfo{kGameName, VK_MAKE_VERSION(1, 0, 0),
+	                            "ZenithSTG-V", VK_MAKE_VERSION(1, 0, 0),
+	                            VK_API_VERSION_1_3};
 
 	std::uint32_t extension_count = 0;
 
@@ -35,39 +28,23 @@ void Instance::createInstance(VkInstance &instance) {
 	    SDL_Vulkan_GetInstanceExtensions(&extension_count);
 
 	if (!extensions) {
-		std::cerr << "SDL_Vulkan_GetInstanceExtensions failed: "
-		          << SDL_GetError() << '\n';
-
-		SDL_Quit();
 		throw std::runtime_error(SDL_GetError());
 	}
 
-	createInfo.enabledExtensionCount = extension_count;
-	createInfo.ppEnabledExtensionNames = extensions;
+	vk::InstanceCreateInfo createInfo{
+	    {},
+	    &appInfo,
+	    enableValidationLayers ? static_cast<uint32_t>(validationLayers.size())
+	                           : 0,
+	    enableValidationLayers ? validationLayers.data() : nullptr,
+	    extension_count,
+	    extensions};
 
-	if (enableValidationLayers) {
-		createInfo.enabledLayerCount =
-		    static_cast<uint32_t>(validationLayers.size());
-		createInfo.ppEnabledLayerNames = validationLayers.data();
-
-		createInfo.pNext = nullptr;
-	} else {
-		createInfo.enabledLayerCount = 0;
-
-		createInfo.pNext = nullptr;
-	}
-
-	if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create instance!");
-	}
+	instance = vk::createInstanceUnique(createInfo);
 }
 
 bool Instance::checkValidationLayerSupport() {
-	uint32_t layerCount;
-	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-	std::vector<VkLayerProperties> availableLayers(layerCount);
-	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+	const auto availableLayers = vk::enumerateInstanceLayerProperties();
 
 	for (const char *layerName : validationLayers) {
 		bool layerFound = false;

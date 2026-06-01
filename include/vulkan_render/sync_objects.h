@@ -5,18 +5,18 @@
 #include <stdexcept>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "main.h"
 
 namespace zenithstgv {
 class SyncObjects {
   public:
-	static void
-	createSyncObjects(VkDevice device, VkSwapchainKHR swap_chain,
-	                  std::vector<VkSemaphore> &image_available_semaphores,
-	                  std::vector<VkSemaphore> &render_finished_semaphores,
-	                  std::vector<VkFence> &in_flight_fences);
+	static void createSyncObjects(
+	    const vk::Device &device, const vk::SwapchainKHR swap_chain,
+	    std::vector<vk::UniqueSemaphore> &image_available_semaphores,
+	    std::vector<vk::UniqueSemaphore> &render_finished_semaphores,
+	    std::vector<vk::UniqueFence> &in_flight_fences);
 };
 } // namespace zenithstgv
 

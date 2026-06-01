@@ -2,111 +2,98 @@
 
 #include <stdexcept>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "main.h"
 #include "vulkan_render/queue_family.h"
 
 namespace zenithstgv {
-void Command::createCommandPool(VkDevice device,
-                                VkPhysicalDevice physical_device,
-                                VkSurfaceKHR surface,
-                                VkCommandPool &command_pool) {
-	QueueFamilyIndices queueFamilyIndices =
+void Command::createCommandPool(const vk::Device &device,
+                                const vk::PhysicalDevice physical_device,
+                                const vk::SurfaceKHR surface,
+                                vk::UniqueCommandPool &command_pool) {
+
+	const QueueFamilyIndices queueFamilyIndices =
 	    findQueueFamilies(physical_device, surface);
 
-	VkCommandPoolCreateInfo poolInfo{};
-	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+	const vk::CommandPoolCreateInfo poolInfo{
+	    vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+	    queueFamilyIndices.graphicsFamily.value()};
 
-	if (vkCreateCommandPool(device, &poolInfo, nullptr, &command_pool) !=
-	    VK_SUCCESS) {
-		throw std::runtime_error("failed to create command pool!");
-	}
+	command_pool = device.createCommandPoolUnique(poolInfo);
 }
 
 void Command::createCommandBuffer(
-    VkDevice device, VkCommandPool command_pool,
-    std::vector<VkCommandBuffer> &command_buffers) {
-	command_buffers.resize(kMaxFramesInFlight);
+    const vk::Device &device, const vk::CommandPool command_pool,
+    std::vector<vk::CommandBuffer> &command_buffers) {
 
-	VkCommandBufferAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = command_pool;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount =
-	    static_cast<uint32_t>(command_buffers.size());
+	const vk::CommandBufferAllocateInfo allocInfo{
+	    command_pool, vk::CommandBufferLevel::ePrimary, kMaxFramesInFlight};
 
-	if (vkAllocateCommandBuffers(device, &allocInfo, command_buffers.data()) !=
-	    VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate command buffers!");
-	}
+	command_buffers = device.allocateCommandBuffers(allocInfo);
 }
 
 void Command::recordCommandBuffer(
-    VkCommandBuffer commandBuffer, uint32_t imageIndex,
-    VkExtent2D swap_chain_extent,
-    std::vector<VkFramebuffer> &swap_chain_framebuffers,
-    VkRenderPass render_pass, VkPipeline graphics_pipeline,
-    VkPipelineLayout pipeline_layout, VkBuffer vertex_buffer,
-    VkBuffer index_buffer, uint32_t indices_size,
-    VkDescriptorSet descriptor_set, float elapsed_time) {
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    const vk::CommandBuffer command_buffer, const uint32_t image_index,
+    const vk::Extent2D swap_chain_extent,
+    const std::vector<vk::UniqueFramebuffer> &swap_chain_framebuffers,
+    const vk::RenderPass render_pass, const vk::Pipeline graphics_pipeline,
+    const vk::PipelineLayout pipeline_layout, const vk::Buffer vertex_buffer,
+    const vk::Buffer index_buffer, const uint32_t indices_size,
+    const vk::DescriptorSet descriptor_set, const float elapsed_time) {
 
-	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-		throw std::runtime_error("failed to begin recording command buffer!");
-	}
+	const vk::CommandBufferBeginInfo beginInfo{};
 
-	VkRenderPassBeginInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = render_pass;
-	renderPassInfo.framebuffer = swap_chain_framebuffers[imageIndex];
-	renderPassInfo.renderArea.offset = {0, 0};
-	renderPassInfo.renderArea.extent = swap_chain_extent;
+	command_buffer.begin(beginInfo);
 
-	VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-	renderPassInfo.clearValueCount = 1;
-	renderPassInfo.pClearValues = &clearColor;
+	const vk::ClearValue clearColor{
+	    std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}};
 
-	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo,
-	                     VK_SUBPASS_CONTENTS_INLINE);
+	const vk::RenderPassBeginInfo renderPassInfo{
+	    render_pass,
+	    swap_chain_framebuffers[image_index].get(),
+	    {{{0, 0}, swap_chain_extent}},
+	    1,
+	    &clearColor};
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-	                  graphics_pipeline);
+	command_buffer.beginRenderPass(renderPassInfo,
+	                               vk::SubpassContents::eInline);
 
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(swap_chain_extent.width);
-	viewport.height = static_cast<float>(swap_chain_extent.height);
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+	command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+	                            graphics_pipeline);
 
-	VkRect2D scissor{};
-	scissor.offset = {0, 0};
-	scissor.extent = swap_chain_extent;
-	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+	const vk::Viewport viewport{0.0f,
+	                            0.0f,
+	                            static_cast<float>(swap_chain_extent.width),
+	                            static_cast<float>(swap_chain_extent.height),
+	                            0.0f,
+	                            1.0f};
 
-	VkBuffer vertexBuffers[] = {vertex_buffer};
-	VkDeviceSize offsets[] = {0};
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+	command_buffer.setViewport(0, viewport);
 
-	vkCmdBindIndexBuffer(commandBuffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-	                        pipeline_layout, 0, 1, &descriptor_set, 0, nullptr);
-	vkCmdPushConstants(commandBuffer, pipeline_layout,
-	                   VK_SHADER_STAGE_VERTEX_BIT |
-	                       VK_SHADER_STAGE_FRAGMENT_BIT,
-	                   0, sizeof(float), &elapsed_time);
-	vkCmdDrawIndexed(commandBuffer, indices_size, 1, 0, 0, 0);
+	const vk::Rect2D scissor{{0, 0}, swap_chain_extent};
 
-	vkCmdEndRenderPass(commandBuffer);
+	command_buffer.setScissor(0, scissor);
 
-	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-		throw std::runtime_error("failed to record command buffer!");
-	}
+	const vk::DeviceSize offsets[] = {0};
+
+	command_buffer.bindVertexBuffers(0, vertex_buffer, offsets);
+
+	command_buffer.bindIndexBuffer(index_buffer, 0, vk::IndexType::eUint16);
+
+	command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+	                                  pipeline_layout, 0, descriptor_set,
+	                                  nullptr);
+
+	command_buffer.pushConstants<float>(pipeline_layout,
+	                                    vk::ShaderStageFlagBits::eVertex |
+	                                        vk::ShaderStageFlagBits::eFragment,
+	                                    0, elapsed_time);
+
+	command_buffer.drawIndexed(indices_size, 1, 0, 0, 0);
+
+	command_buffer.endRenderPass();
+
+	command_buffer.end();
 }
 } // namespace zenithstgv

@@ -13,35 +13,36 @@
 
 namespace zenithstgv {
 struct SwapChainSupportDetails {
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
+	vk::SurfaceCapabilitiesKHR capabilities;
+
+	std::vector<vk::SurfaceFormatKHR> formats;
+
+	std::vector<vk::PresentModeKHR> presentModes;
 };
 
 class SwapChain {
   public:
-	static void createSwapChain(SDL_Window *window, VkDevice &device,
-	                            VkPhysicalDevice &physical_device,
-	                            VkSurfaceKHR &surface,
-	                            VkSwapchainKHR &swap_chain,
-	                            std::vector<VkImage> &swap_chain_images,
-	                            VkFormat &swap_chain_image_format,
-	                            VkExtent2D &swap_chain_extent);
-	static SwapChainSupportDetails
-	querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
+	static void createSwapChain(SDL_Window *window, vk::Device device,
+	                            vk::PhysicalDevice physicalDevice,
+	                            vk::SurfaceKHR surface,
+	                            vk::UniqueSwapchainKHR &swapChain,
+	                            std::vector<vk::Image> &swapChainImages,
+	                            vk::Format &swapChainImageFormat,
+	                            vk::Extent2D &swapChainExtent);
 
-	static void cleanup(VkDevice device, VkSwapchainKHR &swap_chain);
+	static SwapChainSupportDetails
+	querySwapChainSupport(vk::PhysicalDevice device, vk::SurfaceKHR surface);
 
   private:
-	static VkSurfaceFormatKHR chooseSwapSurfaceFormat(
-	    const std::vector<VkSurfaceFormatKHR> &availableFormats);
+	static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(
+	    const std::vector<vk::SurfaceFormatKHR> &availableFormats);
 
-	static VkPresentModeKHR chooseSwapPresentMode(
-	    const std::vector<VkPresentModeKHR> &availablePresentModes);
+	static vk::PresentModeKHR chooseSwapPresentMode(
+	    const std::vector<vk::PresentModeKHR> &availablePresentModes);
 
-	static VkExtent2D
+	static vk::Extent2D
 	chooseSwapExtent(SDL_Window *window,
-	                 const VkSurfaceCapabilitiesKHR &capabilities);
+	                 const vk::SurfaceCapabilitiesKHR &capabilities);
 };
 } // namespace zenithstgv
 

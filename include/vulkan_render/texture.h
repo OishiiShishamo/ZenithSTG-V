@@ -3,58 +3,61 @@
 #define ZENITHSTGV_INCLUDE_VULKAN_RENDER_TEXTURE_H_
 
 #include <string>
-#include <vulkan/vulkan.h>
+
+#include <vulkan/vulkan.hpp>
 
 namespace zenithstgv {
 class Texture {
   public:
-	static void
-	createTextureImage(VkDevice device, VkPhysicalDevice physical_device,
-	                   VkCommandPool command_pool, VkQueue graphics_queue,
-	                   const std::string &path, VkImage &texture_image,
-	                   VkDeviceMemory &texture_image_memory);
+	static void createTextureImage(
+	    const vk::Device &device, const vk::PhysicalDevice &physical_device,
+	    const vk::CommandPool &command_pool, const vk::Queue &graphics_queue,
+	    const std::string &path, vk::UniqueImage &texture_image,
+	    vk::UniqueDeviceMemory &texture_image_memory);
 
-	static void createTextureImageView(VkDevice device, VkImage texture_image,
-	                                   VkImageView &texture_image_view);
+	static void createTextureImageView(const vk::Device &device,
+	                                   const vk::Image &texture_image,
+	                                   vk::UniqueImageView &texture_image_view);
 
-	static void createTextureSampler(VkDevice device,
-	                                 VkPhysicalDevice physical_device,
-	                                 VkSampler &texture_sampler);
-
-	static void cleanup(VkDevice device, VkImage &texture_image,
-	                    VkDeviceMemory &texture_image_memory,
-	                    VkImageView &texture_image_view,
-	                    VkSampler &texture_sampler);
+	static void createTextureSampler(const vk::Device &device,
+	                                 const vk::PhysicalDevice &physical_device,
+	                                 vk::UniqueSampler &texture_sampler);
 
   private:
-	static void createImage(VkDevice device, VkPhysicalDevice physical_device,
-	                        uint32_t width, uint32_t height, VkFormat format,
-	                        VkImageTiling tiling, VkImageUsageFlags usage,
-	                        VkMemoryPropertyFlags properties, VkImage &image,
-	                        VkDeviceMemory &image_memory);
+	static void createImage(const vk::Device &device,
+	                        const vk::PhysicalDevice &physical_device,
+	                        uint32_t width, uint32_t height, vk::Format format,
+	                        vk::ImageTiling tiling, vk::ImageUsageFlags usage,
+	                        vk::MemoryPropertyFlags properties,
+	                        vk::UniqueImage &image,
+	                        vk::UniqueDeviceMemory &image_memory);
 
-	static void transitionImageLayout(VkDevice device,
-	                                  VkCommandPool command_pool,
-	                                  VkQueue graphics_queue, VkImage image,
-	                                  VkImageLayout old_layout,
-	                                  VkImageLayout new_layout);
+	static void transitionImageLayout(const vk::Device &device,
+	                                  const vk::CommandPool &command_pool,
+	                                  const vk::Queue &graphics_queue,
+	                                  const vk::Image &image,
+	                                  vk::ImageLayout old_layout,
+	                                  vk::ImageLayout new_layout);
 
-	static void copyBufferToImage(VkDevice device, VkCommandPool command_pool,
-	                              VkQueue graphics_queue, VkBuffer buffer,
-	                              VkImage image, uint32_t width,
+	static void copyBufferToImage(const vk::Device &device,
+	                              const vk::CommandPool &command_pool,
+	                              const vk::Queue &graphics_queue,
+	                              const vk::Buffer &buffer,
+	                              const vk::Image &image, uint32_t width,
 	                              uint32_t height);
 
-	static VkCommandBuffer beginSingleTimeCommands(VkDevice device,
-	                                               VkCommandPool command_pool);
+	static vk::CommandBuffer
+	beginSingleTimeCommands(const vk::Device &device,
+	                        const vk::CommandPool &command_pool);
 
-	static void endSingleTimeCommands(VkDevice device,
-	                                  VkCommandPool command_pool,
-	                                  VkQueue graphics_queue,
-	                                  VkCommandBuffer command_buffer);
+	static void endSingleTimeCommands(const vk::Device &device,
+	                                  const vk::CommandPool &command_pool,
+	                                  const vk::Queue &graphics_queue,
+	                                  const vk::CommandBuffer &command_buffer);
 
-	static uint32_t findMemoryType(VkPhysicalDevice physical_device,
+	static uint32_t findMemoryType(const vk::PhysicalDevice &physical_device,
 	                               uint32_t type_filter,
-	                               VkMemoryPropertyFlags properties);
+	                               vk::MemoryPropertyFlags properties);
 };
 } // namespace zenithstgv
 

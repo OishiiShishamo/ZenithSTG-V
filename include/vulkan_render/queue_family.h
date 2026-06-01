@@ -6,20 +6,20 @@
 #include <optional>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 namespace zenithstgv {
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
 	std::optional<uint32_t> presentFamily;
 
-	bool isComplete() {
+	bool isComplete() const noexcept {
 		return graphicsFamily.has_value() && presentFamily.has_value();
 	}
 };
 
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device,
-                                     VkSurfaceKHR surface);
+QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device,
+                                     vk::SurfaceKHR surface);
 } // namespace zenithstgv
 
 #endif

@@ -1,300 +1,264 @@
 #include "vulkan_render/texture.h"
-#include "utility/image_loader.h"
+
 #include <cstring>
 #include <stdexcept>
 
-namespace zenithstgv {
+#include <vulkan/vulkan.hpp>
 
-void Texture::createTextureImage(
-    VkDevice device, VkPhysicalDevice physical_device,
-    VkCommandPool command_pool, VkQueue graphics_queue, const std::string &path,
-    VkImage &texture_image, VkDeviceMemory &texture_image_memory) {
+#include "utility/image_loader.h"
+
+namespace zenithstgv {
+void Texture::createImage(const vk::Device &device,
+                          const vk::PhysicalDevice &physical_device,
+                          uint32_t width, uint32_t height, vk::Format format,
+                          vk::ImageTiling tiling, vk::ImageUsageFlags usage,
+                          vk::MemoryPropertyFlags properties,
+                          vk::UniqueImage &image,
+                          vk::UniqueDeviceMemory &image_memory) {
+
+	vk::ImageCreateInfo imageInfo{{},
+	                              vk::ImageType::e2D,
+	                              format,
+	                              vk::Extent3D{width, height, 1},
+	                              1,
+	                              1,
+	                              vk::SampleCountFlagBits::e1,
+	                              tiling,
+	                              usage,
+	                              vk::SharingMode::eExclusive};
+
+	image = device.createImageUnique(imageInfo);
+
+	const auto memReq = device.getImageMemoryRequirements(image.get());
+
+	vk::MemoryAllocateInfo allocInfo{
+	    memReq.size,
+	    findMemoryType(physical_device, memReq.memoryTypeBits, properties)};
+
+	image_memory = device.allocateMemoryUnique(allocInfo);
+
+	device.bindImageMemory(image.get(), image_memory.get(), 0);
+}
+
+void Texture::createTextureImage(const vk::Device &device,
+                                 const vk::PhysicalDevice &physical_device,
+                                 const vk::CommandPool &command_pool,
+                                 const vk::Queue &graphics_queue,
+                                 const std::string &path,
+                                 vk::UniqueImage &texture_image,
+                                 vk::UniqueDeviceMemory &texture_image_memory) {
 
 	ImageData img = loadImage(path);
-	VkDeviceSize imageSize = img.width * img.height * 4;
 
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
+	const vk::DeviceSize imageSize = static_cast<vk::DeviceSize>(img.width) *
+	                                 static_cast<vk::DeviceSize>(img.height) *
+	                                 4;
 
-	VkBufferCreateInfo bufferInfo{};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = imageSize;
-	bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	vk::BufferCreateInfo bufferInfo{{},
+	                                imageSize,
+	                                vk::BufferUsageFlagBits::eTransferSrc,
+	                                vk::SharingMode::eExclusive};
 
-	if (vkCreateBuffer(device, &bufferInfo, nullptr, &stagingBuffer) !=
-	    VK_SUCCESS)
-		throw std::runtime_error("failed to create staging buffer!");
+	auto stagingBuffer = device.createBufferUnique(bufferInfo);
 
-	VkMemoryRequirements memReq;
-	vkGetBufferMemoryRequirements(device, stagingBuffer, &memReq);
+	const auto memReq = device.getBufferMemoryRequirements(stagingBuffer.get());
 
-	VkMemoryAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memReq.size;
-	allocInfo.memoryTypeIndex =
+	vk::MemoryAllocateInfo allocInfo{
+	    memReq.size,
 	    findMemoryType(physical_device, memReq.memoryTypeBits,
-	                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-	                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	                   vk::MemoryPropertyFlagBits::eHostVisible |
+	                       vk::MemoryPropertyFlagBits::eHostCoherent)};
 
-	if (vkAllocateMemory(device, &allocInfo, nullptr, &stagingBufferMemory) !=
-	    VK_SUCCESS)
-		throw std::runtime_error("failed to allocate staging buffer memory!");
+	auto stagingBufferMemory = device.allocateMemoryUnique(allocInfo);
 
-	vkBindBufferMemory(device, stagingBuffer, stagingBufferMemory, 0);
+	device.bindBufferMemory(stagingBuffer.get(), stagingBufferMemory.get(), 0);
 
-	void *data;
-	vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-	memcpy(data, img.pixels, (size_t)imageSize);
-	vkUnmapMemory(device, stagingBufferMemory);
+	void *data = device.mapMemory(stagingBufferMemory.get(), 0, imageSize);
+
+	memcpy(data, img.pixels, static_cast<size_t>(imageSize));
+
+	device.unmapMemory(stagingBufferMemory.get());
+
 	img.free();
 
-	createImage(device, physical_device, img.width, img.height,
-	            VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-	            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-	            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture_image,
+	createImage(device, physical_device, static_cast<uint32_t>(img.width),
+	            static_cast<uint32_t>(img.height), vk::Format::eR8G8B8A8Srgb,
+	            vk::ImageTiling::eOptimal,
+	            vk::ImageUsageFlagBits::eTransferDst |
+	                vk::ImageUsageFlagBits::eSampled,
+	            vk::MemoryPropertyFlagBits::eDeviceLocal, texture_image,
 	            texture_image_memory);
 
-	transitionImageLayout(device, command_pool, graphics_queue, texture_image,
-	                      VK_IMAGE_LAYOUT_UNDEFINED,
-	                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	transitionImageLayout(device, command_pool, graphics_queue,
+	                      texture_image.get(), vk::ImageLayout::eUndefined,
+	                      vk::ImageLayout::eTransferDstOptimal);
 
-	copyBufferToImage(device, command_pool, graphics_queue, stagingBuffer,
-	                  texture_image, static_cast<uint32_t>(img.width),
+	copyBufferToImage(device, command_pool, graphics_queue, stagingBuffer.get(),
+	                  texture_image.get(), static_cast<uint32_t>(img.width),
 	                  static_cast<uint32_t>(img.height));
 
-	transitionImageLayout(device, command_pool, graphics_queue, texture_image,
-	                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-	                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-	vkDestroyBuffer(device, stagingBuffer, nullptr);
-	vkFreeMemory(device, stagingBufferMemory, nullptr);
+	transitionImageLayout(device, command_pool, graphics_queue,
+	                      texture_image.get(),
+	                      vk::ImageLayout::eTransferDstOptimal,
+	                      vk::ImageLayout::eShaderReadOnlyOptimal);
 }
 
-void Texture::createImage(VkDevice device, VkPhysicalDevice physical_device,
-                          uint32_t width, uint32_t height, VkFormat format,
-                          VkImageTiling tiling, VkImageUsageFlags usage,
-                          VkMemoryPropertyFlags properties, VkImage &image,
-                          VkDeviceMemory &image_memory) {
+void Texture::createTextureSampler(const vk::Device &device,
+                                   const vk::PhysicalDevice &physical_device,
+                                   vk::UniqueSampler &texture_sampler) {
 
-	VkImageCreateInfo imageInfo{};
-	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imageInfo.imageType = VK_IMAGE_TYPE_2D;
-	imageInfo.extent.width = width;
-	imageInfo.extent.height = height;
-	imageInfo.extent.depth = 1;
-	imageInfo.mipLevels = 1;
-	imageInfo.arrayLayers = 1;
-	imageInfo.format = format;
-	imageInfo.tiling = tiling;
-	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	imageInfo.usage = usage;
-	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	const auto properties = physical_device.getProperties();
 
-	if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS)
-		throw std::runtime_error("failed to create image!");
+	vk::SamplerCreateInfo samplerInfo{{},
+	                                  vk::Filter::eLinear,
+	                                  vk::Filter::eLinear,
+	                                  vk::SamplerMipmapMode::eLinear,
+	                                  vk::SamplerAddressMode::eRepeat,
+	                                  vk::SamplerAddressMode::eRepeat,
+	                                  vk::SamplerAddressMode::eRepeat,
+	                                  0.0f,
+	                                  VK_TRUE,
+	                                  properties.limits.maxSamplerAnisotropy,
+	                                  VK_FALSE,
+	                                  vk::CompareOp::eAlways,
+	                                  0.0f,
+	                                  0.0f,
+	                                  vk::BorderColor::eIntOpaqueBlack,
+	                                  VK_FALSE};
 
-	VkMemoryRequirements memReq;
-	vkGetImageMemoryRequirements(device, image, &memReq);
-
-	VkMemoryAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memReq.size;
-	allocInfo.memoryTypeIndex =
-	    findMemoryType(physical_device, memReq.memoryTypeBits, properties);
-
-	if (vkAllocateMemory(device, &allocInfo, nullptr, &image_memory) !=
-	    VK_SUCCESS)
-		throw std::runtime_error("failed to allocate image memory!");
-
-	vkBindImageMemory(device, image, image_memory, 0);
+	texture_sampler = device.createSamplerUnique(samplerInfo);
 }
 
-VkCommandBuffer Texture::beginSingleTimeCommands(VkDevice device,
-                                                 VkCommandPool command_pool) {
+vk::CommandBuffer
+Texture::beginSingleTimeCommands(const vk::Device &device,
+                                 const vk::CommandPool &command_pool) {
 
-	VkCommandBufferAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = command_pool;
-	allocInfo.commandBufferCount = 1;
+	vk::CommandBufferAllocateInfo allocInfo{
+	    command_pool, vk::CommandBufferLevel::ePrimary, 1};
 
-	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+	auto commandBuffers = device.allocateCommandBuffers(allocInfo);
 
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	auto commandBuffer = commandBuffers[0];
 
-	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	vk::CommandBufferBeginInfo beginInfo{
+	    vk::CommandBufferUsageFlagBits::eOneTimeSubmit};
+
+	commandBuffer.begin(beginInfo);
+
 	return commandBuffer;
 }
 
-void Texture::endSingleTimeCommands(VkDevice device, VkCommandPool command_pool,
-                                    VkQueue graphics_queue,
-                                    VkCommandBuffer command_buffer) {
+void Texture::endSingleTimeCommands(const vk::Device &device,
+                                    const vk::CommandPool &command_pool,
+                                    const vk::Queue &graphics_queue,
+                                    const vk::CommandBuffer &command_buffer) {
 
-	vkEndCommandBuffer(command_buffer);
+	command_buffer.end();
 
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &command_buffer;
+	vk::SubmitInfo submitInfo{0, nullptr, nullptr, 1, &command_buffer};
 
-	vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(graphics_queue);
+	graphics_queue.submit(submitInfo);
+	graphics_queue.waitIdle();
 
-	vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+	device.freeCommandBuffers(command_pool, command_buffer);
 }
 
-void Texture::transitionImageLayout(VkDevice device, VkCommandPool command_pool,
-                                    VkQueue graphics_queue, VkImage image,
-                                    VkImageLayout old_layout,
-                                    VkImageLayout new_layout) {
+void Texture::transitionImageLayout(const vk::Device &device,
+                                    const vk::CommandPool &command_pool,
+                                    const vk::Queue &graphics_queue,
+                                    const vk::Image &image,
+                                    vk::ImageLayout old_layout,
+                                    vk::ImageLayout new_layout) {
 
-	VkCommandBuffer commandBuffer =
-	    beginSingleTimeCommands(device, command_pool);
+	const auto commandBuffer = beginSingleTimeCommands(device, command_pool);
 
-	VkImageMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.oldLayout = old_layout;
-	barrier.newLayout = new_layout;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = image;
-	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
+	vk::ImageMemoryBarrier barrier{
+	    {},
+	    {},
+	    old_layout,
+	    new_layout,
+	    VK_QUEUE_FAMILY_IGNORED,
+	    VK_QUEUE_FAMILY_IGNORED,
+	    image,
+	    {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
 
-	VkPipelineStageFlags sourceStage;
-	VkPipelineStageFlags destinationStage;
+	vk::PipelineStageFlags sourceStage;
+	vk::PipelineStageFlags destinationStage;
 
-	if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
-	    new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	} else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
-	           new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	if (old_layout == vk::ImageLayout::eUndefined &&
+	    new_layout == vk::ImageLayout::eTransferDstOptimal) {
+
+		barrier.srcAccessMask = {};
+		barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+
+		destinationStage = vk::PipelineStageFlagBits::eTransfer;
+
+	} else if (old_layout == vk::ImageLayout::eTransferDstOptimal &&
+	           new_layout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+
+		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+		sourceStage = vk::PipelineStageFlagBits::eTransfer;
+
+		destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+
 	} else {
 		throw std::runtime_error("unsupported layout transition!");
 	}
 
-	vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0,
-	                     nullptr, 0, nullptr, 1, &barrier);
+	commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, nullptr,
+	                              nullptr, barrier);
 
 	endSingleTimeCommands(device, command_pool, graphics_queue, commandBuffer);
 }
 
-void Texture::copyBufferToImage(VkDevice device, VkCommandPool command_pool,
-                                VkQueue graphics_queue, VkBuffer buffer,
-                                VkImage image, uint32_t width,
+void Texture::copyBufferToImage(const vk::Device &device,
+                                const vk::CommandPool &command_pool,
+                                const vk::Queue &graphics_queue,
+                                const vk::Buffer &buffer,
+                                const vk::Image &image, uint32_t width,
                                 uint32_t height) {
 
-	VkCommandBuffer commandBuffer =
-	    beginSingleTimeCommands(device, command_pool);
+	const auto commandBuffer = beginSingleTimeCommands(device, command_pool);
 
-	VkBufferImageCopy region{};
-	region.bufferOffset = 0;
-	region.bufferRowLength = 0;
-	region.bufferImageHeight = 0;
-	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	region.imageSubresource.mipLevel = 0;
-	region.imageSubresource.baseArrayLayer = 0;
-	region.imageSubresource.layerCount = 1;
-	region.imageOffset = {0, 0, 0};
-	region.imageExtent = {width, height, 1};
+	vk::BufferImageCopy region{
+	    0,         0,
+	    0,         {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+	    {0, 0, 0}, {width, height, 1}};
 
-	vkCmdCopyBufferToImage(commandBuffer, buffer, image,
-	                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+	commandBuffer.copyBufferToImage(
+	    buffer, image, vk::ImageLayout::eTransferDstOptimal, region);
 
 	endSingleTimeCommands(device, command_pool, graphics_queue, commandBuffer);
 }
 
-void Texture::createTextureImageView(VkDevice device, VkImage texture_image,
-                                     VkImageView &texture_image_view) {
+void Texture::createTextureImageView(const vk::Device &device,
+                                     const vk::Image &texture_image,
+                                     vk::UniqueImageView &texture_image_view) {
 
-	VkImageViewCreateInfo viewInfo{};
-	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	viewInfo.image = texture_image;
-	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	viewInfo.subresourceRange.baseMipLevel = 0;
-	viewInfo.subresourceRange.levelCount = 1;
-	viewInfo.subresourceRange.baseArrayLayer = 0;
-	viewInfo.subresourceRange.layerCount = 1;
+	vk::ImageViewCreateInfo viewInfo{
+	    {},
+	    texture_image,
+	    vk::ImageViewType::e2D,
+	    vk::Format::eR8G8B8A8Srgb,
+	    {},
+	    {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
 
-	if (vkCreateImageView(device, &viewInfo, nullptr, &texture_image_view) !=
-	    VK_SUCCESS)
-		throw std::runtime_error("failed to create texture image view!");
+	texture_image_view = device.createImageViewUnique(viewInfo);
 }
 
-void Texture::createTextureSampler(VkDevice device,
-                                   VkPhysicalDevice physical_device,
-                                   VkSampler &texture_sampler) {
-
-	VkPhysicalDeviceProperties properties{};
-	vkGetPhysicalDeviceProperties(physical_device, &properties);
-
-	VkSamplerCreateInfo samplerInfo{};
-	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	samplerInfo.magFilter = VK_FILTER_LINEAR;
-	samplerInfo.minFilter = VK_FILTER_LINEAR;
-	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerInfo.anisotropyEnable = VK_TRUE;
-	samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	samplerInfo.unnormalizedCoordinates = VK_FALSE;
-	samplerInfo.compareEnable = VK_FALSE;
-	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-
-	if (vkCreateSampler(device, &samplerInfo, nullptr, &texture_sampler) !=
-	    VK_SUCCESS)
-		throw std::runtime_error("failed to create texture sampler!");
-}
-
-void Texture::cleanup(VkDevice device, VkImage &texture_image,
-                      VkDeviceMemory &texture_image_memory,
-                      VkImageView &texture_image_view,
-                      VkSampler &texture_sampler) {
-
-	if (texture_sampler != VK_NULL_HANDLE) {
-		vkDestroySampler(device, texture_sampler, nullptr);
-		texture_sampler = VK_NULL_HANDLE;
-	}
-	if (texture_image_view != VK_NULL_HANDLE) {
-		vkDestroyImageView(device, texture_image_view, nullptr);
-		texture_image_view = VK_NULL_HANDLE;
-	}
-	if (texture_image != VK_NULL_HANDLE) {
-		vkDestroyImage(device, texture_image, nullptr);
-		texture_image = VK_NULL_HANDLE;
-	}
-	if (texture_image_memory != VK_NULL_HANDLE) {
-		vkFreeMemory(device, texture_image_memory, nullptr);
-		texture_image_memory = VK_NULL_HANDLE;
-	}
-}
-
-uint32_t Texture::findMemoryType(VkPhysicalDevice physical_device,
+uint32_t Texture::findMemoryType(const vk::PhysicalDevice &physical_device,
                                  uint32_t type_filter,
-                                 VkMemoryPropertyFlags properties) {
+                                 vk::MemoryPropertyFlags properties) {
 
-	VkPhysicalDeviceMemoryProperties memProperties;
-	vkGetPhysicalDeviceMemoryProperties(physical_device, &memProperties);
+	const auto memProperties = physical_device.getMemoryProperties();
 
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+
 		if ((type_filter & (1 << i)) &&
 		    (memProperties.memoryTypes[i].propertyFlags & properties) ==
 		        properties) {

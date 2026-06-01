@@ -1,68 +1,50 @@
 #include "vulkan_render/index_buffer.h"
 
 #include <cstring>
-
 #include <stdexcept>
 
+#include <vulkan/vulkan.hpp>
+
 namespace zenithstgv {
-void IndexBuffer::createIndexBuffer(VkDevice device,
-                                    VkPhysicalDevice physical_device,
-                                    const std::vector<uint16_t> &indices,
-                                    VkBuffer &index_buffer,
-                                    VkDeviceMemory &index_buffer_memory) {
+void IndexBuffer::createIndexBuffer(
+    const vk::Device &device, const vk::PhysicalDevice physical_device,
+    const std::vector<uint16_t> &indices, vk::UniqueBuffer &index_buffer,
+    vk::UniqueDeviceMemory &index_buffer_memory) {
 
-	VkBufferCreateInfo bufferInfo{};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = sizeof(indices[0]) * indices.size();
-	bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	const vk::DeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
-	if (vkCreateBuffer(device, &bufferInfo, nullptr, &index_buffer) !=
-	    VK_SUCCESS) {
-		throw std::runtime_error("failed to create index buffer!");
-	}
+	const vk::BufferCreateInfo bufferInfo{{},
+	                                      bufferSize,
+	                                      vk::BufferUsageFlagBits::eIndexBuffer,
+	                                      vk::SharingMode::eExclusive};
 
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(device, index_buffer, &memRequirements);
+	index_buffer = device.createBufferUnique(bufferInfo);
 
-	VkMemoryAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex =
+	const auto memRequirements =
+	    device.getBufferMemoryRequirements(index_buffer.get());
+
+	const vk::MemoryAllocateInfo allocInfo{
+	    memRequirements.size,
 	    findMemoryType(physical_device, memRequirements.memoryTypeBits,
-	                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-	                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	                   vk::MemoryPropertyFlagBits::eHostVisible |
+	                       vk::MemoryPropertyFlagBits::eHostCoherent)};
 
-	if (vkAllocateMemory(device, &allocInfo, nullptr, &index_buffer_memory) !=
-	    VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate index buffer memory!");
-	}
+	index_buffer_memory = device.allocateMemoryUnique(allocInfo);
 
-	vkBindBufferMemory(device, index_buffer, index_buffer_memory, 0);
+	device.bindBufferMemory(index_buffer.get(), index_buffer_memory.get(), 0);
 
-	void *data;
-	vkMapMemory(device, index_buffer_memory, 0, bufferInfo.size, 0, &data);
-	memcpy(data, indices.data(), (size_t)bufferInfo.size);
-	vkUnmapMemory(device, index_buffer_memory);
+	void *data = device.mapMemory(index_buffer_memory.get(), 0, bufferSize);
+
+	std::memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
+
+	device.unmapMemory(index_buffer_memory.get());
 }
 
-void IndexBuffer::cleanup(VkDevice device, VkBuffer &index_buffer,
-                          VkDeviceMemory &index_buffer_memory) {
-	if (index_buffer != VK_NULL_HANDLE) {
-		vkDestroyBuffer(device, index_buffer, nullptr);
-		index_buffer = VK_NULL_HANDLE;
-	}
-	if (index_buffer_memory != VK_NULL_HANDLE) {
-		vkFreeMemory(device, index_buffer_memory, nullptr);
-		index_buffer_memory = VK_NULL_HANDLE;
-	}
-}
+uint32_t IndexBuffer::findMemoryType(const vk::PhysicalDevice physical_device,
+                                     const uint32_t type_filter,
+                                     const vk::MemoryPropertyFlags properties) {
 
-uint32_t IndexBuffer::findMemoryType(VkPhysicalDevice physical_device,
-                                     uint32_t type_filter,
-                                     VkMemoryPropertyFlags properties) {
-	VkPhysicalDeviceMemoryProperties memProperties;
-	vkGetPhysicalDeviceMemoryProperties(physical_device, &memProperties);
+	const auto memProperties = physical_device.getMemoryProperties();
 
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
 		if ((type_filter & (1 << i)) &&

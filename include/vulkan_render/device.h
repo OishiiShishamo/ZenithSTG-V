@@ -7,26 +7,26 @@
 #include <stdexcept>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "vulkan_render/queue_family.h"
 
 namespace zenithstgv {
 class Device {
   public:
-	static void pickPhysicalDevice(VkInstance instance,
-	                               VkPhysicalDevice &physical_device,
-	                               VkSurfaceKHR &surface);
-	static void createLogicalDevice(VkDevice &device,
-	                                VkPhysicalDevice &physical_device,
-	                                VkQueue &graphics_queue,
-	                                VkQueue &present_queue,
-	                                VkSurfaceKHR surface);
+	static void pickPhysicalDevice(vk::Instance instance,
+	                               vk::PhysicalDevice &physicalDevice,
+	                               vk::SurfaceKHR surface);
+	static void createLogicalDevice(vk::UniqueDevice &device,
+	                                vk::PhysicalDevice physicalDevice,
+	                                vk::Queue &graphicsQueue,
+	                                vk::Queue &presentQueue,
+	                                vk::SurfaceKHR surface);
 
   private:
-	static int rateDeviceSuitability(VkPhysicalDevice device,
-	                                 VkSurfaceKHR &surface);
-	static bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+	static int rateDeviceSuitability(vk::PhysicalDevice device,
+	                                 vk::SurfaceKHR surface);
+	static bool checkDeviceExtensionSupport(vk::PhysicalDevice device);
 };
 } // namespace zenithstgv
 

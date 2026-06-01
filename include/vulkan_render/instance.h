@@ -9,14 +9,14 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "main.h"
 
 namespace zenithstgv {
 class Instance {
   public:
-	static void createInstance(VkInstance &instance);
+	static void createInstance(vk::UniqueInstance &instance);
 
   private:
 	static bool checkValidationLayerSupport();

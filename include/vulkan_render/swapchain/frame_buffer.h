@@ -5,18 +5,16 @@
 #include <stdexcept>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 namespace zenithstgv {
 class FrameBuffer {
   public:
-	static void
-	createFramebuffers(VkDevice device, VkExtent2D swap_chain_extent,
-	                   std::vector<VkImageView> &swap_chain_image_views,
-	                   std::vector<VkFramebuffer> &swap_chain_framebuffers,
-	                   VkRenderPass render_pass);
-	static void cleanup(VkDevice device,
-	                    std::vector<VkFramebuffer> &framebuffers);
+	static void createFramebuffers(
+	    vk::Device device, vk::Extent2D swapChainExtent,
+	    const std::vector<vk::UniqueImageView> &swapChainImageViews,
+	    std::vector<vk::UniqueFramebuffer> &swapChainFramebuffers,
+	    vk::RenderPass renderPass);
 };
 } // namespace zenithstgv
 

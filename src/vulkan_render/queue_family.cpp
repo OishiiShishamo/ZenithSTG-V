@@ -4,32 +4,30 @@
 #include <optional>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 namespace zenithstgv {
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device,
-                                     VkSurfaceKHR surface) {
+QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device,
+                                     vk::SurfaceKHR surface) {
 	QueueFamilyIndices indices;
 
-	uint32_t queueFamilyCount = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
-	                                         nullptr);
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
-	                                         queueFamilies.data());
+	const auto queueFamilies = device.getQueueFamilyProperties();
 
-	for (uint32_t i = 0; i < queueFamilyCount; i++) {
-		if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+	for (uint32_t i = 0; i < queueFamilies.size(); i++) {
+
+		if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics) {
 			indices.graphicsFamily = i;
+		}
 
-		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface,
-		                                     &presentSupport);
-		if (presentSupport)
+		vk::Bool32 presentSupport = device.getSurfaceSupportKHR(i, surface);
+
+		if (presentSupport) {
 			indices.presentFamily = i;
+		}
 
-		if (indices.isComplete())
+		if (indices.isComplete()) {
 			break;
+		}
 	}
 
 	return indices;

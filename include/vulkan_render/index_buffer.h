@@ -3,24 +3,22 @@
 #define ZENITHSTGV_INCLUDE_VULKAN_RENDER_INDEX_BUFFER_H_
 
 #include <vector>
-#include <vulkan/vulkan.h>
+
+#include <vulkan/vulkan.hpp>
 
 namespace zenithstgv {
 class IndexBuffer {
   public:
-	static void createIndexBuffer(VkDevice device,
-	                              VkPhysicalDevice physical_device,
+	static void createIndexBuffer(const vk::Device &device,
+	                              const vk::PhysicalDevice physical_device,
 	                              const std::vector<uint16_t> &indices,
-	                              VkBuffer &index_buffer,
-	                              VkDeviceMemory &index_buffer_memory);
-
-	static void cleanup(VkDevice device, VkBuffer &index_buffer,
-	                    VkDeviceMemory &index_buffer_memory);
+	                              vk::UniqueBuffer &index_buffer,
+	                              vk::UniqueDeviceMemory &index_buffer_memory);
 
   private:
-	static uint32_t findMemoryType(VkPhysicalDevice physical_device,
-	                               uint32_t type_filter,
-	                               VkMemoryPropertyFlags properties);
+	static uint32_t findMemoryType(const vk::PhysicalDevice physical_device,
+	                               const uint32_t type_filter,
+	                               const vk::MemoryPropertyFlags properties);
 };
 } // namespace zenithstgv
 

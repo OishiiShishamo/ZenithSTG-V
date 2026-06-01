@@ -11,22 +11,23 @@
 namespace zenithstgv {
 class Command {
   public:
-	static void createCommandPool(VkDevice device,
-	                              VkPhysicalDevice physical_device,
-	                              VkSurfaceKHR surface,
-	                              VkCommandPool &command_pool);
+	static void createCommandPool(const vk::Device &device,
+	                              const vk::PhysicalDevice physical_device,
+	                              const vk::SurfaceKHR surface,
+	                              vk::UniqueCommandPool &command_pool);
 	static void
-	createCommandBuffer(VkDevice device, VkCommandPool command_pool,
-	                    std::vector<VkCommandBuffer> &command_buffers);
-	static void
-	recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex,
-	                    VkExtent2D swap_chain_extent,
-	                    std::vector<VkFramebuffer> &swap_chain_framebuffers,
-	                    VkRenderPass render_pass, VkPipeline graphics_pipeline,
-	                    VkPipelineLayout pipeline_layout,
-	                    VkBuffer vertex_buffer, VkBuffer index_buffer,
-	                    uint32_t indices_size, VkDescriptorSet descriptor_set,
-	                    float elapsed_time);
+	createCommandBuffer(const vk::Device &device,
+	                    const vk::CommandPool command_pool,
+	                    std::vector<vk::CommandBuffer> &command_buffers);
+	static void recordCommandBuffer(
+	    const vk::CommandBuffer command_buffer, const uint32_t image_index,
+	    const vk::Extent2D swap_chain_extent,
+	    const std::vector<vk::UniqueFramebuffer> &swap_chain_framebuffers,
+	    const vk::RenderPass render_pass, const vk::Pipeline graphics_pipeline,
+	    const vk::PipelineLayout pipeline_layout,
+	    const vk::Buffer vertex_buffer, const vk::Buffer index_buffer,
+	    const uint32_t indices_size, const vk::DescriptorSet descriptor_set,
+	    const float elapsed_time);
 };
 } // namespace zenithstgv
 

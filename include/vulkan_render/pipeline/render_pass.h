@@ -4,14 +4,14 @@
 
 #include <stdexcept>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 namespace zenithstgv {
 class RenderPass {
   public:
-	static void createRenderPass(VkDevice device,
-	                             VkFormat swap_chain_image_format,
-	                             VkRenderPass &render_pass);
+	static void createRenderPass(const vk::Device &device,
+	                             const vk::Format swap_chain_image_format,
+	                             vk::UniqueRenderPass &render_pass);
 };
 } // namespace zenithstgv
 

@@ -4,82 +4,81 @@
 #include <stdexcept>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "vulkan_render/command.h"
 
 namespace zenithstgv {
-bool Draw::drawFrame(VkDevice &device, VkSwapchainKHR swap_chain,
-                     VkExtent2D swap_chain_extent,
-                     std::vector<VkFramebuffer> &swap_chain_framebuffers,
-                     VkRenderPass render_pass, VkPipeline graphics_pipeline,
-                     VkPipelineLayout pipeline_layout,
-                     std::vector<VkCommandBuffer> &command_buffers,
-                     VkQueue graphics_queue, VkQueue present_queue,
-                     std::vector<VkSemaphore> &image_available_semaphores,
-                     std::vector<VkSemaphore> &render_finished_semaphores,
-                     std::vector<VkFence> &in_flight_fences,
-                     uint32_t current_frame, VkBuffer vertex_buffer,
-                     VkBuffer index_buffer, uint32_t indices_size,
-                     VkDescriptorSet descriptor_set, float elapsed_time) {
+bool Draw::drawFrame(
+    const vk::Device &device, const vk::SwapchainKHR &swap_chain,
+    vk::Extent2D swap_chain_extent,
+    const std::vector<vk::UniqueFramebuffer> &swap_chain_framebuffers,
+    const vk::RenderPass &render_pass, const vk::Pipeline &graphics_pipeline,
+    const vk::PipelineLayout &pipeline_layout,
+    const std::vector<vk::CommandBuffer> &command_buffers,
+    const vk::Queue &graphics_queue, const vk::Queue &present_queue,
+    const std::vector<vk::UniqueSemaphore> &image_available_semaphores,
+    const std::vector<vk::UniqueSemaphore> &render_finished_semaphores,
+    const std::vector<vk::UniqueFence> &in_flight_fences,
+    uint32_t current_frame, const vk::Buffer &vertex_buffer,
+    const vk::Buffer &index_buffer, uint32_t indices_size,
+    const vk::DescriptorSet &descriptor_set, float elapsed_time) {
 
-	vkWaitForFences(device, 1, &in_flight_fences[current_frame], VK_TRUE,
-	                UINT64_MAX);
-	vkResetFences(device, 1, &in_flight_fences[current_frame]);
+	(void)device.waitForFences(in_flight_fences[current_frame].get(), VK_TRUE,
+	                           UINT64_MAX);
 
-	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(
-	    device, swap_chain, UINT64_MAX,
-	    image_available_semaphores[current_frame], VK_NULL_HANDLE, &imageIndex);
+	device.resetFences(in_flight_fences[current_frame].get());
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	auto [result, imageIndex] = device.acquireNextImageKHR(
+	    swap_chain, UINT64_MAX,
+	    image_available_semaphores[current_frame].get());
+
+	if (result == vk::Result::eErrorOutOfDateKHR) {
 		return true;
-	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-		throw std::runtime_error("failed to acquire swap chain image!");
+	}
 
-	vkResetCommandBuffer(command_buffers[current_frame], 0);
+	if (result != vk::Result::eSuccess &&
+	    result != vk::Result::eSuboptimalKHR) {
+
+		throw std::runtime_error("failed to acquire swap chain image!");
+	}
+
+	command_buffers[current_frame].reset();
+
 	Command::recordCommandBuffer(command_buffers[current_frame], imageIndex,
 	                             swap_chain_extent, swap_chain_framebuffers,
 	                             render_pass, graphics_pipeline,
 	                             pipeline_layout, vertex_buffer, index_buffer,
 	                             indices_size, descriptor_set, elapsed_time);
 
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	constexpr vk::PipelineStageFlags waitStages =
+	    vk::PipelineStageFlagBits::eColorAttachmentOutput;
 
-	VkSemaphore waitSemaphores[] = {image_available_semaphores[current_frame]};
-	VkPipelineStageFlags waitStages[] = {
-	    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &command_buffers[current_frame];
+	vk::SubmitInfo submitInfo{1,
+	                          &image_available_semaphores[current_frame].get(),
+	                          &waitStages,
+	                          1,
+	                          &command_buffers[current_frame],
+	                          1,
+	                          &render_finished_semaphores[imageIndex].get()};
 
-	VkSemaphore signalSemaphores[] = {render_finished_semaphores[imageIndex]};
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
+	graphics_queue.submit(submitInfo, in_flight_fences[current_frame].get());
 
-	if (vkQueueSubmit(graphics_queue, 1, &submitInfo,
-	                  in_flight_fences[current_frame]) != VK_SUCCESS) {
-		throw std::runtime_error("failed to submit draw command buffer!");
+	vk::PresentInfoKHR presentInfo{
+	    1, &render_finished_semaphores[imageIndex].get(), 1, &swap_chain,
+	    &imageIndex};
+
+	result = present_queue.presentKHR(presentInfo);
+
+	if (result == vk::Result::eErrorOutOfDateKHR ||
+	    result == vk::Result::eSuboptimalKHR) {
+
+		return true;
 	}
 
-	VkPresentInfoKHR presentInfo{};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalSemaphores;
-
-	VkSwapchainKHR swapChains[] = {swap_chain};
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-	presentInfo.pImageIndices = &imageIndex;
-
-	result = vkQueuePresentKHR(present_queue, &presentInfo);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-		return true;
-	if (result != VK_SUCCESS)
+	if (result != vk::Result::eSuccess) {
 		throw std::runtime_error("failed to present swap chain image!");
+	}
 
 	return false;
 }

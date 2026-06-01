@@ -7,7 +7,7 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "vertex.h"
 #include "window/window.h"
@@ -42,32 +42,32 @@ class Application {
 
   private:
 	WindowPtr window_;
-	VkInstance instance_ = VK_NULL_HANDLE;
-	VkSurfaceKHR surface_;
+	vk::UniqueInstance instance_;
 
-	VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
-	VkDevice device_;
+	vk::SurfaceKHR surface_;
 
-	VkQueue graphics_queue_;
-	VkQueue present_queue_;
+	vk::PhysicalDevice physical_device_;
+	vk::UniqueDevice device_;
+	vk::Queue graphics_queue_;
+	vk::Queue present_queue_;
 
-	VkSwapchainKHR swap_chain_;
-	std::vector<VkImage> swap_chain_images_;
-	VkFormat swap_chain_image_format_;
-	VkExtent2D swap_chain_extent_;
-	std::vector<VkImageView> swap_chain_image_views_;
-	std::vector<VkFramebuffer> swap_chain_framebuffers_;
+	vk::UniqueSwapchainKHR swap_chain_;
+	std::vector<vk::Image> swap_chain_images_;
+	vk::Format swap_chain_image_format_;
+	vk::Extent2D swap_chain_extent_;
+	std::vector<vk::UniqueImageView> swap_chain_image_views_;
+	std::vector<vk::UniqueFramebuffer> swap_chain_framebuffers_;
 
-	VkRenderPass render_pass_;
-	VkPipelineLayout pipeline_layout_;
-	VkPipeline graphics_pipeline_;
+	vk::UniqueRenderPass render_pass_;
+	vk::UniquePipelineLayout pipeline_layout_;
+	vk::UniquePipeline graphics_pipeline_;
 
-	VkCommandPool command_pool_;
-	std::vector<VkCommandBuffer> command_buffers_;
+	vk::UniqueCommandPool command_pool_;
+	std::vector<vk::CommandBuffer> command_buffers_;
 
-	std::vector<VkSemaphore> image_available_semaphores_;
-	std::vector<VkSemaphore> render_finished_semaphores_;
-	std::vector<VkFence> in_flight_fences_;
+	std::vector<vk::UniqueSemaphore> image_available_semaphores_;
+	std::vector<vk::UniqueSemaphore> render_finished_semaphores_;
+	std::vector<vk::UniqueFence> in_flight_fences_;
 	uint32_t current_frame_ = 0;
 
 	std::vector<Vertex> vertices_ = {
@@ -78,19 +78,19 @@ class Application {
 
 	std::vector<uint16_t> indices_ = {0, 1, 2, 2, 3, 0};
 
-	VkBuffer vertex_buffer_ = VK_NULL_HANDLE;
-	VkDeviceMemory vertex_buffer_memory_ = VK_NULL_HANDLE;
-	VkBuffer index_buffer_ = VK_NULL_HANDLE;
-	VkDeviceMemory index_buffer_memory_ = VK_NULL_HANDLE;
+	vk::UniqueBuffer vertex_buffer_;
+	vk::UniqueDeviceMemory vertex_buffer_memory_;
+	vk::UniqueBuffer index_buffer_;
+	vk::UniqueDeviceMemory index_buffer_memory_;
 
-	VkImage texture_image_ = VK_NULL_HANDLE;
-	VkDeviceMemory texture_image_memory_ = VK_NULL_HANDLE;
-	VkImageView texture_image_view_ = VK_NULL_HANDLE;
-	VkSampler texture_sampler_ = VK_NULL_HANDLE;
+	vk::UniqueImage texture_image_;
+	vk::UniqueDeviceMemory texture_image_memory_;
+	vk::UniqueImageView texture_image_view_;
+	vk::UniqueSampler texture_sampler_;
 
-	VkDescriptorSetLayout descriptor_set_layout_ = VK_NULL_HANDLE;
-	VkDescriptorPool descriptor_pool_ = VK_NULL_HANDLE;
-	VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;
+	vk::UniqueDescriptorSetLayout descriptor_set_layout_;
+	vk::UniqueDescriptorPool descriptor_pool_;
+	vk::DescriptorSet descriptor_set_;
 
 	void initVulkan();
 	void mainLoop();

@@ -4,26 +4,22 @@
 
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "vertex.h"
 
 namespace zenithstgv {
 class VertexBuffer {
   public:
-	static void createVertexBuffer(VkDevice device,
-	                               VkPhysicalDevice physical_device,
-	                               const std::vector<Vertex> &vertices,
-	                               VkBuffer &vertex_buffer,
-	                               VkDeviceMemory &vertex_buffer_memory);
-
-	static void cleanup(VkDevice device, VkBuffer &vertex_buffer,
-	                    VkDeviceMemory &vertex_buffer_memory);
+	static void createVertexBuffer(
+	    const vk::Device &device, const vk::PhysicalDevice physical_device,
+	    const std::vector<Vertex> &vertices, vk::UniqueBuffer &vertex_buffer,
+	    vk::UniqueDeviceMemory &vertex_buffer_memory);
 
   private:
-	static uint32_t findMemoryType(VkPhysicalDevice physical_device,
-	                               uint32_t type_filter,
-	                               VkMemoryPropertyFlags properties);
+	static uint32_t findMemoryType(const vk::PhysicalDevice physical_device,
+	                               const uint32_t type_filter,
+	                               const vk::MemoryPropertyFlags properties);
 };
 } // namespace zenithstgv
 

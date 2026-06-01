@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "utility/read_file.h"
 
@@ -13,12 +13,12 @@ namespace zenithstgv {
 class GraphicsPipeline {
   public:
 	static void
-	createGraphicsPipeline(VkDevice device, VkRenderPass render_pass,
-	                       VkDescriptorSetLayout descriptor_set_layout,
-	                       VkPipelineLayout &pipeline_layout,
-	                       VkPipeline &graphics_pipeline);
-	static VkShaderModule createShaderModule(const std::vector<char> &code,
-	                                         VkDevice device);
+	createGraphicsPipeline(vk::Device device, vk::RenderPass render_pass,
+	                       vk::DescriptorSetLayout descriptor_set_layout,
+	                       vk::UniquePipelineLayout &pipeline_layout,
+	                       vk::UniquePipeline &graphics_pipeline);
+	static vk::UniqueShaderModule
+	createShaderModule(const std::vector<char> &code, vk::Device device);
 };
 } // namespace zenithstgv
 

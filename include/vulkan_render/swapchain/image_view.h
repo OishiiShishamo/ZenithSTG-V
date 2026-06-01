@@ -5,16 +5,16 @@
 #include <stdexcept>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 namespace zenithstgv {
 class ImageView {
   public:
 	static void
-	createImageViews(VkDevice device, std::vector<VkImage> &swap_chain_images,
-	                 VkFormat &swap_chain_image_format,
-	                 std::vector<VkImageView> &swap_chain_image_views);
-	static void cleanup(VkDevice device, std::vector<VkImageView> &image_views);
+	createImageViews(vk::Device device,
+	                 const std::vector<vk::Image> &swapChainImages,
+	                 vk::Format swapChainImageFormat,
+	                 std::vector<vk::UniqueImageView> &swapChainImageViews);
 };
 } // namespace zenithstgv
 #endif

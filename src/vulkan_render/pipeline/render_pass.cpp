@@ -2,51 +2,41 @@
 
 #include <stdexcept>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 namespace zenithstgv {
-void RenderPass::createRenderPass(VkDevice device,
-                                  VkFormat swap_chain_image_format,
-                                  VkRenderPass &render_pass) {
-	VkAttachmentDescription colorAttachment{};
-	colorAttachment.format = swap_chain_image_format;
-	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+void RenderPass::createRenderPass(const vk::Device &device,
+                                  const vk::Format swap_chain_image_format,
+                                  vk::UniqueRenderPass &render_pass) {
+	const vk::AttachmentDescription colorAttachment{
+	    {},
+	    swap_chain_image_format,
+	    vk::SampleCountFlagBits::e1,
+	    vk::AttachmentLoadOp::eClear,
+	    vk::AttachmentStoreOp::eStore,
+	    vk::AttachmentLoadOp::eDontCare,
+	    vk::AttachmentStoreOp::eDontCare,
+	    vk::ImageLayout::eUndefined,
+	    vk::ImageLayout::ePresentSrcKHR};
 
-	VkAttachmentReference colorAttachmentRef{};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	const vk::AttachmentReference colorAttachmentRef{
+	    0, vk::ImageLayout::eColorAttachmentOptimal};
 
-	VkSubpassDescription subpass{};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
+	const vk::SubpassDescription subpass{{}, vk::PipelineBindPoint::eGraphics,
+	                                     0,  nullptr,
+	                                     1,  &colorAttachmentRef};
 
-	VkSubpassDependency dependency{};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass = 0;
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.srcAccessMask = 0;
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	const vk::SubpassDependency dependency{
+	    VK_SUBPASS_EXTERNAL,
+	    0,
+	    vk::PipelineStageFlagBits::eColorAttachmentOutput,
+	    vk::PipelineStageFlagBits::eColorAttachmentOutput,
+	    {},
+	    vk::AccessFlagBits::eColorAttachmentWrite};
 
-	VkRenderPassCreateInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = 1;
-	renderPassInfo.pAttachments = &colorAttachment;
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-	renderPassInfo.dependencyCount = 1;
-	renderPassInfo.pDependencies = &dependency;
+	const vk::RenderPassCreateInfo renderPassInfo{
+	    {}, 1, &colorAttachment, 1, &subpass, 1, &dependency};
 
-	if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &render_pass) !=
-	    VK_SUCCESS) {
-		throw std::runtime_error("failed to create render pass!");
-	}
+	render_pass = device.createRenderPassUnique(renderPassInfo);
 }
 } // namespace zenithstgv

@@ -4,27 +4,23 @@
 
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 namespace zenithstgv {
 class Descriptor {
   public:
-	static void
-	createDescriptorSetLayout(VkDevice device,
-	                          VkDescriptorSetLayout &descriptor_set_layout);
+	static void createDescriptorSetLayout(
+	    const vk::Device &device,
+	    vk::UniqueDescriptorSetLayout &descriptor_set_layout);
 
-	static void createDescriptorPool(VkDevice device,
-	                                 VkDescriptorPool &descriptor_pool);
+	static void createDescriptorPool(const vk::Device &device,
+	                                 vk::UniqueDescriptorPool &descriptor_pool);
 
-	static void createDescriptorSet(VkDevice device,
-	                                VkDescriptorPool descriptor_pool,
-	                                VkDescriptorSetLayout descriptor_set_layout,
-	                                VkImageView texture_image_view,
-	                                VkSampler texture_sampler,
-	                                VkDescriptorSet &descriptor_set);
-
-	static void cleanup(VkDevice device, VkDescriptorPool &descriptor_pool,
-	                    VkDescriptorSetLayout &descriptor_set_layout);
+	static void createDescriptorSet(
+	    const vk::Device &device, const vk::DescriptorPool descriptor_pool,
+	    const vk::DescriptorSetLayout descriptor_set_layout,
+	    const vk::ImageView texture_image_view,
+	    const vk::Sampler texture_sampler, vk::DescriptorSet &descriptor_set);
 };
 } // namespace zenithstgv
 

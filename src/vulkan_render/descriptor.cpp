@@ -2,91 +2,53 @@
 
 #include <stdexcept>
 
+#include <vulkan/vulkan.hpp>
+
 namespace zenithstgv {
 void Descriptor::createDescriptorSetLayout(
-    VkDevice device, VkDescriptorSetLayout &descriptor_set_layout) {
+    const vk::Device &device,
+    vk::UniqueDescriptorSetLayout &descriptor_set_layout) {
 
-	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 0;
-	samplerLayoutBinding.descriptorType =
-	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	samplerLayoutBinding.pImmutableSamplers = nullptr;
+	const vk::DescriptorSetLayoutBinding samplerLayoutBinding{
+	    0, vk::DescriptorType::eCombinedImageSampler, 1,
+	    vk::ShaderStageFlagBits::eFragment};
 
-	VkDescriptorSetLayoutCreateInfo layoutInfo{};
-	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = 1;
-	layoutInfo.pBindings = &samplerLayoutBinding;
+	const vk::DescriptorSetLayoutCreateInfo layoutInfo{
+	    {}, 1, &samplerLayoutBinding};
 
-	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr,
-	                                &descriptor_set_layout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create descriptor set layout!");
-	}
+	descriptor_set_layout = device.createDescriptorSetLayoutUnique(layoutInfo);
 }
 
-void Descriptor::createDescriptorPool(VkDevice device,
-                                      VkDescriptorPool &descriptor_pool) {
+void Descriptor::createDescriptorPool(
+    const vk::Device &device, vk::UniqueDescriptorPool &descriptor_pool) {
 
-	VkDescriptorPoolSize poolSize{};
-	poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSize.descriptorCount = 1;
+	const vk::DescriptorPoolSize poolSize{
+	    vk::DescriptorType::eCombinedImageSampler, 1};
 
-	VkDescriptorPoolCreateInfo poolInfo{};
-	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount = 1;
-	poolInfo.pPoolSizes = &poolSize;
-	poolInfo.maxSets = 1;
+	const vk::DescriptorPoolCreateInfo poolInfo{{}, 1, 1, &poolSize};
 
-	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptor_pool) !=
-	    VK_SUCCESS) {
-		throw std::runtime_error("failed to create descriptor pool!");
-	}
+	descriptor_pool = device.createDescriptorPoolUnique(poolInfo);
 }
 
 void Descriptor::createDescriptorSet(
-    VkDevice device, VkDescriptorPool descriptor_pool,
-    VkDescriptorSetLayout descriptor_set_layout, VkImageView texture_image_view,
-    VkSampler texture_sampler, VkDescriptorSet &descriptor_set) {
+    const vk::Device &device, const vk::DescriptorPool descriptor_pool,
+    const vk::DescriptorSetLayout descriptor_set_layout,
+    const vk::ImageView texture_image_view, const vk::Sampler texture_sampler,
+    vk::DescriptorSet &descriptor_set) {
 
-	VkDescriptorSetAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = descriptor_pool;
-	allocInfo.descriptorSetCount = 1;
-	allocInfo.pSetLayouts = &descriptor_set_layout;
+	const vk::DescriptorSetAllocateInfo allocInfo{descriptor_pool, 1,
+	                                              &descriptor_set_layout};
 
-	if (vkAllocateDescriptorSets(device, &allocInfo, &descriptor_set) !=
-	    VK_SUCCESS) {
-		throw std::runtime_error("failed to allocate descriptor set!");
-	}
+	descriptor_set = device.allocateDescriptorSets(allocInfo)[0];
 
-	VkDescriptorImageInfo imageInfo{};
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = texture_image_view;
-	imageInfo.sampler = texture_sampler;
+	const vk::DescriptorImageInfo imageInfo{
+	    texture_sampler, texture_image_view,
+	    vk::ImageLayout::eShaderReadOnlyOptimal};
 
-	VkWriteDescriptorSet descriptorWrite{};
-	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrite.dstSet = descriptor_set;
-	descriptorWrite.dstBinding = 0;
-	descriptorWrite.dstArrayElement = 0;
-	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorWrite.descriptorCount = 1;
-	descriptorWrite.pImageInfo = &imageInfo;
+	const vk::WriteDescriptorSet descriptorWrite{
+	    descriptor_set, 0, 0, 1, vk::DescriptorType::eCombinedImageSampler,
+	    &imageInfo};
 
-	vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
-}
-
-void Descriptor::cleanup(VkDevice device, VkDescriptorPool &descriptor_pool,
-                         VkDescriptorSetLayout &descriptor_set_layout) {
-
-	if (descriptor_pool != VK_NULL_HANDLE) {
-		vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
-		descriptor_pool = VK_NULL_HANDLE;
-	}
-	if (descriptor_set_layout != VK_NULL_HANDLE) {
-		vkDestroyDescriptorSetLayout(device, descriptor_set_layout, nullptr);
-		descriptor_set_layout = VK_NULL_HANDLE;
-	}
+	device.updateDescriptorSets(descriptorWrite, nullptr);
 }
 } // namespace zenithstgv

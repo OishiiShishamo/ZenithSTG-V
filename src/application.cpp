@@ -5,7 +5,7 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "main.h"
 #include "vertex.h"
@@ -33,45 +33,67 @@ namespace zenithstgv {
 
 void Application::initVulkan() {
 	Instance::createInstance(instance_);
+
 	Surface::createSurface(window_.get(), instance_, surface_);
-	Device::pickPhysicalDevice(instance_, physical_device_, surface_);
+
+	Device::pickPhysicalDevice(instance_.get(), physical_device_, surface_);
+
 	Device::createLogicalDevice(device_, physical_device_, graphics_queue_,
 	                            present_queue_, surface_);
-	SwapChain::createSwapChain(window_.get(), device_, physical_device_,
+
+	SwapChain::createSwapChain(window_.get(), device_.get(), physical_device_,
 	                           surface_, swap_chain_, swap_chain_images_,
 	                           swap_chain_image_format_, swap_chain_extent_);
-	ImageView::createImageViews(device_, swap_chain_images_,
+
+	ImageView::createImageViews(device_.get(), swap_chain_images_,
 	                            swap_chain_image_format_,
 	                            swap_chain_image_views_);
-	Descriptor::createDescriptorSetLayout(device_, descriptor_set_layout_);
-	RenderPass::createRenderPass(device_, swap_chain_image_format_,
+
+	Descriptor::createDescriptorSetLayout(device_.get(),
+	                                      descriptor_set_layout_);
+
+	RenderPass::createRenderPass(device_.get(), swap_chain_image_format_,
 	                             render_pass_);
+
 	GraphicsPipeline::createGraphicsPipeline(
-	    device_, render_pass_, descriptor_set_layout_, pipeline_layout_,
-	    graphics_pipeline_);
-	FrameBuffer::createFramebuffers(device_, swap_chain_extent_,
-	                                swap_chain_image_views_,
-	                                swap_chain_framebuffers_, render_pass_);
-	Command::createCommandPool(device_, physical_device_, surface_,
+	    device_.get(), render_pass_.get(), descriptor_set_layout_.get(),
+	    pipeline_layout_, graphics_pipeline_);
+
+	FrameBuffer::createFramebuffers(
+	    device_.get(), swap_chain_extent_, swap_chain_image_views_,
+	    swap_chain_framebuffers_, render_pass_.get());
+
+	Command::createCommandPool(device_.get(), physical_device_, surface_,
 	                           command_pool_);
-	Command::createCommandBuffer(device_, command_pool_, command_buffers_);
+
+	Command::createCommandBuffer(device_.get(), command_pool_.get(),
+	                             command_buffers_);
+
 	SyncObjects::createSyncObjects(
-	    device_, swap_chain_, image_available_semaphores_,
+	    device_.get(), swap_chain_.get(), image_available_semaphores_,
 	    render_finished_semaphores_, in_flight_fences_);
-	VertexBuffer::createVertexBuffer(device_, physical_device_, vertices_,
+
+	VertexBuffer::createVertexBuffer(device_.get(), physical_device_, vertices_,
 	                                 vertex_buffer_, vertex_buffer_memory_);
-	IndexBuffer::createIndexBuffer(device_, physical_device_, indices_,
+
+	IndexBuffer::createIndexBuffer(device_.get(), physical_device_, indices_,
 	                               index_buffer_, index_buffer_memory_);
-	Texture::createTextureImage(device_, physical_device_, command_pool_,
-	                            graphics_queue_, "textures/test.png",
-	                            texture_image_, texture_image_memory_);
-	Texture::createTextureImageView(device_, texture_image_,
+
+	Texture::createTextureImage(
+	    device_.get(), physical_device_, command_pool_.get(), graphics_queue_,
+	    "textures/test.png", texture_image_, texture_image_memory_);
+
+	Texture::createTextureImageView(device_.get(), texture_image_.get(),
 	                                texture_image_view_);
-	Texture::createTextureSampler(device_, physical_device_, texture_sampler_);
-	Descriptor::createDescriptorPool(device_, descriptor_pool_);
-	Descriptor::createDescriptorSet(device_, descriptor_pool_,
-	                                descriptor_set_layout_, texture_image_view_,
-	                                texture_sampler_, descriptor_set_);
+
+	Texture::createTextureSampler(device_.get(), physical_device_,
+	                              texture_sampler_);
+
+	Descriptor::createDescriptorPool(device_.get(), descriptor_pool_);
+
+	Descriptor::createDescriptorSet(
+	    device_.get(), descriptor_pool_.get(), descriptor_set_layout_.get(),
+	    texture_image_view_.get(), texture_sampler_.get(), descriptor_set_);
 }
 
 void Application::mainLoop() {
@@ -83,7 +105,9 @@ void Application::mainLoop() {
 
 	while (running) {
 		time_mng.ElapsedTime();
+
 		elapsed_time = time_mng.NSec2Double(time_mng.Timer());
+
 		SDL_Event event;
 
 		while (SDL_PollEvent(&event)) {
@@ -92,107 +116,74 @@ void Application::mainLoop() {
 			}
 		}
 
-		if (!running)
+		if (!running) {
 			break;
+		}
 
-		if (Draw::drawFrame(device_, swap_chain_, swap_chain_extent_,
-		                    swap_chain_framebuffers_, render_pass_,
-		                    graphics_pipeline_, pipeline_layout_,
-		                    command_buffers_, graphics_queue_, present_queue_,
-		                    image_available_semaphores_,
-		                    render_finished_semaphores_, in_flight_fences_,
-		                    current_frame_, vertex_buffer_, index_buffer_,
-		                    indices_.size(), descriptor_set_, elapsed_time)) {
+		if (Draw::drawFrame(
+		        device_.get(), swap_chain_.get(), swap_chain_extent_,
+		        swap_chain_framebuffers_, render_pass_.get(),
+		        graphics_pipeline_.get(), pipeline_layout_.get(),
+		        command_buffers_, graphics_queue_, present_queue_,
+		        image_available_semaphores_, render_finished_semaphores_,
+		        in_flight_fences_, current_frame_, vertex_buffer_.get(),
+		        index_buffer_.get(), static_cast<uint32_t>(indices_.size()),
+		        descriptor_set_, static_cast<float>(elapsed_time))) {
+
 			recreateSwapChain();
 		}
+
 		current_frame_ = (current_frame_ + 1) % kMaxFramesInFlight;
+
 		time_mng.FrameWait();
 	}
 
-	vkDeviceWaitIdle(device_);
+	device_->waitIdle();
 }
 
 void Application::cleanup() {
-	Descriptor::cleanup(device_, descriptor_pool_, descriptor_set_layout_);
-	Texture::cleanup(device_, texture_image_, texture_image_memory_,
-	                 texture_image_view_, texture_sampler_);
-	VertexBuffer::cleanup(device_, vertex_buffer_, vertex_buffer_memory_);
-	IndexBuffer::cleanup(device_, index_buffer_, index_buffer_memory_);
-	for (auto X : image_available_semaphores_)
-		vkDestroySemaphore(device_, X, nullptr);
-	for (auto X : render_finished_semaphores_)
-		vkDestroySemaphore(device_, X, nullptr);
-	for (auto X : in_flight_fences_)
-		vkDestroyFence(device_, X, nullptr);
-	vkDestroyCommandPool(device_, command_pool_, nullptr);
-
-	for (auto framebuffer : swap_chain_framebuffers_) {
-		vkDestroyFramebuffer(device_, framebuffer, nullptr);
+	if (device_) {
+		device_->waitIdle();
 	}
 
-	vkDestroyPipeline(device_, graphics_pipeline_, nullptr);
-	vkDestroyPipelineLayout(device_, pipeline_layout_, nullptr);
-	vkDestroyRenderPass(device_, render_pass_, nullptr);
-
-	for (auto imageView : swap_chain_image_views_) {
-		if (imageView != VK_NULL_HANDLE) {
-			vkDestroyImageView(device_, imageView, nullptr);
-		}
-	}
-
-	if (swap_chain_ != VK_NULL_HANDLE) {
-		vkDestroySwapchainKHR(device_, swap_chain_, nullptr);
-	}
-
-	if (device_ != VK_NULL_HANDLE) {
-		vkDestroyDevice(device_, nullptr);
-	}
-
-	if (surface_ != VK_NULL_HANDLE) {
-		vkDestroySurfaceKHR(instance_, surface_, nullptr);
-		surface_ = VK_NULL_HANDLE;
-	}
-
-	if (instance_ != VK_NULL_HANDLE) {
-		vkDestroyInstance(instance_, nullptr);
-		instance_ = VK_NULL_HANDLE;
-	}
 	SDL_Quit();
 }
 
 void Application::recreateSwapChain() {
-	int width = 0, height = 0;
+	int width = 0;
+	int height = 0;
+
 	SDL_GetWindowSizeInPixels(window_.get(), &width, &height);
-	if (width == 0 || height == 0)
+
+	if (width == 0 || height == 0) {
 		return;
+	}
 
-	vkDeviceWaitIdle(device_);
+	device_->waitIdle();
 
-	for (auto s : image_available_semaphores_)
-		vkDestroySemaphore(device_, s, nullptr);
-	for (auto s : render_finished_semaphores_)
-		vkDestroySemaphore(device_, s, nullptr);
-	for (auto f : in_flight_fences_)
-		vkDestroyFence(device_, f, nullptr);
 	image_available_semaphores_.clear();
 	render_finished_semaphores_.clear();
 	in_flight_fences_.clear();
 
-	FrameBuffer::cleanup(device_, swap_chain_framebuffers_);
-	ImageView::cleanup(device_, swap_chain_image_views_);
-	SwapChain::cleanup(device_, swap_chain_);
+	swap_chain_framebuffers_.clear();
+	swap_chain_image_views_.clear();
 
-	SwapChain::createSwapChain(window_.get(), device_, physical_device_,
+	swap_chain_.reset();
+
+	SwapChain::createSwapChain(window_.get(), device_.get(), physical_device_,
 	                           surface_, swap_chain_, swap_chain_images_,
 	                           swap_chain_image_format_, swap_chain_extent_);
-	ImageView::createImageViews(device_, swap_chain_images_,
+
+	ImageView::createImageViews(device_.get(), swap_chain_images_,
 	                            swap_chain_image_format_,
 	                            swap_chain_image_views_);
-	FrameBuffer::createFramebuffers(device_, swap_chain_extent_,
-	                                swap_chain_image_views_,
-	                                swap_chain_framebuffers_, render_pass_);
+
+	FrameBuffer::createFramebuffers(
+	    device_.get(), swap_chain_extent_, swap_chain_image_views_,
+	    swap_chain_framebuffers_, render_pass_.get());
+
 	SyncObjects::createSyncObjects(
-	    device_, swap_chain_, image_available_semaphores_,
+	    device_.get(), swap_chain_.get(), image_available_semaphores_,
 	    render_finished_semaphores_, in_flight_fences_);
 }
 } // namespace zenithstgv

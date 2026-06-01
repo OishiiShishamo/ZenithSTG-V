@@ -3,48 +3,41 @@
 #include <stdexcept>
 #include <vector>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "main.h"
 
 namespace zenithstgv {
 void SyncObjects::createSyncObjects(
-    VkDevice device, VkSwapchainKHR swap_chain,
-    std::vector<VkSemaphore> &image_available_semaphores,
-    std::vector<VkSemaphore> &render_finished_semaphores,
-    std::vector<VkFence> &in_flight_fences) {
+    const vk::Device &device, const vk::SwapchainKHR swap_chain,
+    std::vector<vk::UniqueSemaphore> &image_available_semaphores,
+    std::vector<vk::UniqueSemaphore> &render_finished_semaphores,
+    std::vector<vk::UniqueFence> &in_flight_fences) {
 
-	uint32_t imageCount;
-	vkGetSwapchainImagesKHR(device, swap_chain, &imageCount, nullptr);
+	const auto swap_chain_images = device.getSwapchainImagesKHR(swap_chain);
+
+	const uint32_t imageCount = static_cast<uint32_t>(swap_chain_images.size());
 
 	image_available_semaphores.resize(kMaxFramesInFlight);
 	render_finished_semaphores.resize(imageCount);
 	in_flight_fences.resize(kMaxFramesInFlight);
 
-	VkSemaphoreCreateInfo semaphoreInfo{};
-	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	const vk::SemaphoreCreateInfo semaphoreInfo{};
 
-	VkFenceCreateInfo fenceInfo{};
-	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	const vk::FenceCreateInfo fenceInfo{vk::FenceCreateFlagBits::eSignaled};
 
 	for (int i = 0; i < kMaxFramesInFlight; i++) {
-		if (vkCreateSemaphore(device, &semaphoreInfo, nullptr,
-		                      &image_available_semaphores[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create sync objects!");
-		}
+		image_available_semaphores[i] =
+		    device.createSemaphoreUnique(semaphoreInfo);
 	}
+
 	for (uint32_t i = 0; i < imageCount; i++) {
-		if (vkCreateSemaphore(device, &semaphoreInfo, nullptr,
-		                      &render_finished_semaphores[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create sync objects!");
-		}
+		render_finished_semaphores[i] =
+		    device.createSemaphoreUnique(semaphoreInfo);
 	}
+
 	for (int i = 0; i < kMaxFramesInFlight; i++) {
-		if (vkCreateFence(device, &fenceInfo, nullptr, &in_flight_fences[i]) !=
-		    VK_SUCCESS) {
-			throw std::runtime_error("failed to create sync objects!");
-		}
+		in_flight_fences[i] = device.createFenceUnique(fenceInfo);
 	}
 }
 } // namespace zenithstgv

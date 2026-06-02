@@ -17,6 +17,7 @@ class TimeUtl {
 
 	void StartTimer();
 	void StopTimer();
+	void RequestStop();
 	void ResetTimer();
 	std::chrono::milliseconds NSec2MSec(std::chrono::nanoseconds ns);
 	double NSec2Double(std::chrono::nanoseconds);
@@ -25,10 +26,12 @@ class TimeUtl {
 	void FrameWait();
 
   private:
-	std::chrono::nanoseconds last_frame_time_;
-	std::chrono::nanoseconds elapsedus_;
+	std::chrono::nanoseconds last_frame_time_ = std::chrono::nanoseconds(0);
+	std::chrono::nanoseconds elapsedus_ = std::chrono::nanoseconds(0);
 	std::chrono::high_resolution_clock::time_point start_time_;
-	std::chrono::nanoseconds frame_duration_;
+	std::chrono::nanoseconds frame_duration_ =
+	    std::chrono::nanoseconds(1000000000 / fps);
+	bool stop_requested_ = false;
 };
 
 extern TimeUtl time_mng_;

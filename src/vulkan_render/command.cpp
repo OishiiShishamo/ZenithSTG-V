@@ -37,18 +37,18 @@ void Command::recordCommandBuffer(
     const vk::CommandBuffer command_buffer, const uint32_t image_index,
     const vk::Extent2D swap_chain_extent,
     const std::vector<vk::UniqueFramebuffer> &swap_chain_framebuffers,
-    const vk::RenderPass render_pass, const vk::Pipeline graphics_pipeline,
+    const vk::RenderPass render_pass,
+    const std::array<vk::UniquePipeline, 4> &blend_pipelines,
     const vk::PipelineLayout pipeline_layout, const vk::Buffer vertex_buffer,
     const vk::Buffer index_buffer, const uint32_t indices_size,
+    const std::array<vk::UniqueBuffer, 4> &instance_buffers,
+    const std::array<std::vector<InstanceData>, 4> &instance_lists,
     const vk::DescriptorSet descriptor_set, const float elapsed_time) {
 
-	const vk::CommandBufferBeginInfo beginInfo{};
-
-	command_buffer.begin(beginInfo);
+	command_buffer.begin(vk::CommandBufferBeginInfo{});
 
 	const vk::ClearValue clearColor{
 	    std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}};
-
 	const vk::RenderPassBeginInfo renderPassInfo{
 	    render_pass,
 	    swap_chain_framebuffers[image_index].get(),
@@ -59,25 +59,16 @@ void Command::recordCommandBuffer(
 	command_buffer.beginRenderPass(renderPassInfo,
 	                               vk::SubpassContents::eInline);
 
-	command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-	                            graphics_pipeline);
-
 	const vk::Viewport viewport{0.0f,
 	                            0.0f,
 	                            static_cast<float>(swap_chain_extent.width),
 	                            static_cast<float>(swap_chain_extent.height),
 	                            0.0f,
 	                            1.0f};
-
 	command_buffer.setViewport(0, viewport);
 
 	const vk::Rect2D scissor{{0, 0}, swap_chain_extent};
-
 	command_buffer.setScissor(0, scissor);
-
-	const vk::DeviceSize offsets[] = {0};
-
-	command_buffer.bindVertexBuffers(0, vertex_buffer, offsets);
 
 	command_buffer.bindIndexBuffer(index_buffer, 0, vk::IndexType::eUint16);
 
@@ -90,10 +81,23 @@ void Command::recordCommandBuffer(
 	                                        vk::ShaderStageFlagBits::eFragment,
 	                                    0, elapsed_time);
 
-	command_buffer.drawIndexed(indices_size, 1, 0, 0, 0);
+	for (int i = 0; i < 4; i++) {
+		if (instance_lists[i].empty())
+			continue;
+
+		command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+		                            *blend_pipelines[i]);
+
+		const vk::DeviceSize offsets[] = {0};
+		command_buffer.bindVertexBuffers(0, vertex_buffer, offsets);
+		command_buffer.bindVertexBuffers(1, *instance_buffers[i], offsets);
+
+		command_buffer.drawIndexed(
+		    indices_size, static_cast<uint32_t>(instance_lists[i].size()), 0, 0,
+		    0);
+	}
 
 	command_buffer.endRenderPass();
-
 	command_buffer.end();
 }
 } // namespace zenithstgv

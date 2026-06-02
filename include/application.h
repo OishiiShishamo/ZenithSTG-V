@@ -9,6 +9,7 @@
 #include <SDL3/SDL_vulkan.h>
 #include <vulkan/vulkan.hpp>
 
+#include "instance_data.h"
 #include "vertex.h"
 #include "window/window.h"
 
@@ -60,7 +61,7 @@ class Application {
 
 	vk::UniqueRenderPass render_pass_;
 	vk::UniquePipelineLayout pipeline_layout_;
-	vk::UniquePipeline graphics_pipeline_;
+	std::array<vk::UniquePipeline, 4> blend_pipelines_;
 
 	vk::UniqueCommandPool command_pool_;
 	std::vector<vk::CommandBuffer> command_buffers_;
@@ -82,6 +83,11 @@ class Application {
 	vk::UniqueDeviceMemory vertex_buffer_memory_;
 	vk::UniqueBuffer index_buffer_;
 	vk::UniqueDeviceMemory index_buffer_memory_;
+
+	std::array<vk::UniqueBuffer, 4> instance_buffers_;
+	std::array<vk::UniqueDeviceMemory, 4> instance_buffer_memories_;
+
+	std::array<std::vector<InstanceData>, 4> instance_lists_;
 
 	vk::UniqueImage texture_image_;
 	vk::UniqueDeviceMemory texture_image_memory_;

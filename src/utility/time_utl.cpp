@@ -14,6 +14,8 @@ void TimeUtl::StartTimer() {
 
 void TimeUtl::StopTimer() { elapsedus_ = Timer(); }
 
+void TimeUtl::RequestStop() { stop_requested_ = true; }
+
 void TimeUtl::ResetTimer() {
 	StartTimer();
 	elapsedus_ = std::chrono::nanoseconds(0);
@@ -45,13 +47,13 @@ void TimeUtl::FrameWait() {
 
 	auto sleep_margin = std::chrono::milliseconds(4);
 
-	if (frame_elapsed < frame_duration_ - sleep_margin) {
+	if (!stop_requested_ && frame_elapsed < frame_duration_ - sleep_margin) {
 		std::this_thread::sleep_for((frame_duration_ - frame_elapsed) -
 		                            sleep_margin);
 	}
 
 	// 微調整 / fine tuning.
-	while (Timer() - last_frame_time_ < frame_duration_) {
+	while (!stop_requested_ && Timer() - last_frame_time_ < frame_duration_) {
 		std::this_thread::yield();
 	}
 }

@@ -7,7 +7,9 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include "instance_data.h"
 #include "vulkan_render/command.h"
+#include "vulkan_render/instance_buffer.h"
 
 namespace zenithstgv {
 class Draw {
@@ -17,7 +19,7 @@ class Draw {
 	    vk::Extent2D swap_chain_extent,
 	    const std::vector<vk::UniqueFramebuffer> &swap_chain_framebuffers,
 	    const vk::RenderPass &render_pass,
-	    const vk::Pipeline &graphics_pipeline,
+	    const std::array<vk::UniquePipeline, 4> &blend_pipelines,
 	    const vk::PipelineLayout &pipeline_layout,
 	    const std::vector<vk::CommandBuffer> &command_buffers,
 	    const vk::Queue &graphics_queue, const vk::Queue &present_queue,
@@ -26,6 +28,8 @@ class Draw {
 	    const std::vector<vk::UniqueFence> &in_flight_fences,
 	    uint32_t current_frame, const vk::Buffer &vertex_buffer,
 	    const vk::Buffer &index_buffer, uint32_t indices_size,
+	    const std::array<vk::UniqueBuffer, 4> &instance_buffers,
+	    const std::array<std::vector<InstanceData>, 4> &instance_lists,
 	    const vk::DescriptorSet &descriptor_set, float elapsed_time);
 };
 } // namespace zenithstgv

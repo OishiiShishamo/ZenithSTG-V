@@ -31,6 +31,8 @@ inline constexpr const char *kGameName = "ZenithSTG-V";
 inline constexpr const char *kDefaultWindowTitle = "ZenithSTG-V";
 inline const zenithstgv::Vec2D kDefaultResolution(1600, 900);
 
+inline constexpr uint32_t kMaxInstances = 65536;
+
 inline constexpr int kMaxFramesInFlight = 2;
 
 const std::vector<const char *> validationLayers = {

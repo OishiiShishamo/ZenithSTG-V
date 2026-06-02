@@ -6,6 +6,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include "instance_data.h"
 #include "vulkan_render/queue_family.h"
 
 namespace zenithstgv {
@@ -23,11 +24,14 @@ class Command {
 	    const vk::CommandBuffer command_buffer, const uint32_t image_index,
 	    const vk::Extent2D swap_chain_extent,
 	    const std::vector<vk::UniqueFramebuffer> &swap_chain_framebuffers,
-	    const vk::RenderPass render_pass, const vk::Pipeline graphics_pipeline,
+	    const vk::RenderPass render_pass,
+	    const std::array<vk::UniquePipeline, 4> &blend_pipelines,
 	    const vk::PipelineLayout pipeline_layout,
 	    const vk::Buffer vertex_buffer, const vk::Buffer index_buffer,
-	    const uint32_t indices_size, const vk::DescriptorSet descriptor_set,
-	    const float elapsed_time);
+	    const uint32_t indices_size,
+	    const std::array<vk::UniqueBuffer, 4> &instance_buffers,
+	    const std::array<std::vector<InstanceData>, 4> &instance_lists,
+	    const vk::DescriptorSet descriptor_set, const float elapsed_time);
 };
 } // namespace zenithstgv
 

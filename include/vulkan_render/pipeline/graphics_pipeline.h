@@ -13,10 +13,11 @@ namespace zenithstgv {
 class GraphicsPipeline {
   public:
 	static void
-	createGraphicsPipeline(vk::Device device, vk::RenderPass render_pass,
-	                       vk::DescriptorSetLayout descriptor_set_layout,
-	                       vk::UniquePipelineLayout &pipeline_layout,
-	                       vk::UniquePipeline &graphics_pipeline);
+	createGraphicsPipelines(vk::Device device, vk::RenderPass render_pass,
+	                        vk::DescriptorSetLayout descriptor_set_layout,
+	                        vk::UniquePipelineLayout &pipeline_layout,
+	                        std::array<vk::UniquePipeline, 4> &pipelines);
+
 	static vk::UniqueShaderModule
 	createShaderModule(const std::vector<char> &code, vk::Device device);
 };

@@ -16,7 +16,7 @@ void main() {
     vec4 col = texture(texSampler, fragTexCoord);
     
 	float luma = dot(col.rgb, vec3(0.299, 0.587, 0.114));
-    float mask = smoothstep(0.85, 0.98, luma);
+    float mask = smoothstep(0.95, 0.98, luma);
 
     vec3 rgb = mix(col.rgb, col.rgb * fragInstanceColor.rgb, mask);
 

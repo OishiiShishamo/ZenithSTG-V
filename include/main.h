@@ -33,7 +33,7 @@ inline const zenithstgv::Vec2D kDefaultResolution(1600, 900);
 
 inline constexpr uint32_t kMaxInstances = 65536;
 
-inline constexpr uint32_t kMaxBullet = 8192;
+inline constexpr uint32_t kMaxBullet = 16384;
 inline constexpr uint32_t kMaxLaser = 8192;
 
 #define kCenterX 960

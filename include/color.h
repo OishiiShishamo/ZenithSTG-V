@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 
 #include <emmintrin.h>
 #include <immintrin.h>
@@ -178,6 +179,10 @@ inline static Color Lerp(const Color &c1, const Color &c2, float t) noexcept {
 	__m128 t_vec = _mm_set1_ps(t);
 	return Color(_mm_add_ps(c1.Get(), _mm_mul_ps(diff, t_vec)));
 }
+
+Color GetColorHsv(float h, float s, float v);
+
+Color GamingColor(long long t, long long offset = 0, float mul = 1.0);
 } // namespace zenithstgv
 
 #endif

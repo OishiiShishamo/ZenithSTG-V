@@ -118,7 +118,7 @@ void Application::mainLoop() {
 
 	while (running) {
 		time_mng.ElapsedTime();
-		while (t != time_mng_.target_t_) {
+		while (t != time_mng.target_t_) {
 			t++;
 		}
 
@@ -137,19 +137,23 @@ void Application::mainLoop() {
 			break;
 		}
 
-		ObjectParams p;
-		p.pos = Vec2D(960, 540);
-		p.style = "bullet_1";
-		p.color = Color(1.0f, 1.0f, 1.0f);
-		p.blend = BlendMode::kNormal;
-		p.is_col = 0;
-		p.way = 32;
-		p.spread = kTau;
-		p.start_angle = 0;
-		p.end_angle = 0;
-		p.start_speed = 3.0;
-		p.end_speed = 3.0;
-		bullet_manager_.CreateSmartBulletGroup(t, p);
+		if (t % 1 == 0) {
+			ObjectParams p;
+			p.pos = Vec2D(960, 540);
+			p.style = "bullet_1";
+			p.color = GamingColor(t);
+			p.blend = BlendMode::kNormal;
+			p.is_col = 0;
+			p.way = 128;
+			p.spread = kTau;
+			p.start_angle = sin(t * kPi / 60) * 360;
+			p.end_angle = sin(t * kPi / 60) * 360 + 30;
+			p.angle_ease_time = 60;
+			p.angle_ease_type = kEaseInQuad;
+			p.start_speed = 6.0;
+			p.end_speed = 6.0;
+			bullet_manager_.CreateSmartBulletGroup(t, p);
+		}
 
 		bullet_manager_.MoveBullets(t);
 

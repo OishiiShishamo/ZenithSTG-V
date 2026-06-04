@@ -9,6 +9,7 @@ layout(location = 4) in vec2 instancePos1;
 layout(location = 5) in vec2 instancePos2;
 layout(location = 6) in vec2 instancePos3;
 layout(location = 7) in vec4 instanceColor;
+layout(location = 8) in vec4 instanceUV;
 
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
@@ -28,6 +29,7 @@ void main() {
 
     gl_Position = vec4(positions[gl_VertexIndex % 4], 0.0, 1.0);
     fragColor = inColor;
-    fragTexCoord = inTexCoord;
+    vec2 atlasUV = mix(instanceUV.xy, instanceUV.zw, inTexCoord);
+	fragTexCoord = atlasUV;
     fragInstanceColor = instanceColor;
 }

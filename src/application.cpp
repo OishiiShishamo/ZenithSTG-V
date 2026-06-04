@@ -28,7 +28,11 @@
 #include "vulkan_render/texture.h"
 #include "vulkan_render/vertex_buffer.h"
 
+#include "utility/atlas_builder.h"
 #include "utility/time_utl.h"
+
+#include "object/bullet.h"
+#include "object/object.h"
 
 namespace zenithstgv {
 
@@ -37,13 +41,14 @@ void Application::initVulkan() {
 
 	Surface::createSurface(window_.get(), instance_, surface_);
 
-	Device::pickPhysicalDevice(instance_.get(), physical_device_, surface_);
+	Device::pickPhysicalDevice(instance_.get(), physical_device_,
+	                           surface_.get());
 
 	Device::createLogicalDevice(device_, physical_device_, graphics_queue_,
-	                            present_queue_, surface_);
+	                            present_queue_, surface_.get());
 
 	SwapChain::createSwapChain(window_.get(), device_.get(), physical_device_,
-	                           surface_, swap_chain_, swap_chain_images_,
+	                           surface_.get(), swap_chain_, swap_chain_images_,
 	                           swap_chain_image_format_, swap_chain_extent_);
 
 	ImageView::createImageViews(device_.get(), swap_chain_images_,
@@ -64,7 +69,7 @@ void Application::initVulkan() {
 	    device_.get(), swap_chain_extent_, swap_chain_image_views_,
 	    swap_chain_framebuffers_, render_pass_.get());
 
-	Command::createCommandPool(device_.get(), physical_device_, surface_,
+	Command::createCommandPool(device_.get(), physical_device_, surface_.get(),
 	                           command_pool_);
 
 	Command::createCommandBuffer(device_.get(), command_pool_.get(),
@@ -82,7 +87,7 @@ void Application::initVulkan() {
 
 	Texture::createTextureImage(
 	    device_.get(), physical_device_, command_pool_.get(), graphics_queue_,
-	    "textures/test.png", texture_image_, texture_image_memory_);
+	    atlas_.getImageData(), texture_image_, texture_image_memory_);
 
 	Texture::createTextureImageView(device_.get(), texture_image_.get(),
 	                                texture_image_view_);
@@ -106,12 +111,16 @@ void Application::initVulkan() {
 void Application::mainLoop() {
 	bool running = true;
 	double elapsed_time = 0.0;
+	long long t = 0;
 
 	TimeUtl time_mng;
 	time_mng.StartTimer();
 
 	while (running) {
 		time_mng.ElapsedTime();
+		while (t != time_mng_.target_t_) {
+			t++;
+		}
 
 		elapsed_time = time_mng.NSec2Double(time_mng.Timer());
 
@@ -128,18 +137,27 @@ void Application::mainLoop() {
 			break;
 		}
 
+		ObjectParams p;
+		p.pos = Vec2D(960, 540);
+		p.style = "bullet_1";
+		p.color = Color(1.0f, 1.0f, 1.0f);
+		p.blend = BlendMode::kNormal;
+		p.is_col = 0;
+		p.way = 32;
+		p.spread = kTau;
+		p.start_angle = 0;
+		p.end_angle = 0;
+		p.start_speed = 3.0;
+		p.end_speed = 3.0;
+		bullet_manager_.CreateSmartBulletGroup(t, p);
+
+		bullet_manager_.MoveBullets(t);
+
 		instance_lists_[0].clear();
-		for (int i = 0; i < 100; i++) {
-			Sprite spr;
-			float x = (i % 10) * 0.2f - 0.9f;
-			float y = (i / 10.0f) * 0.2f - 0.9f;
-			spr.pos[0] = Vec2D(x, y);
-			spr.pos[1] = Vec2D(x + 0.1f, y);
-			spr.pos[2] = Vec2D(x + 0.1f, y + 0.1f);
-			spr.pos[3] = Vec2D(x, y + 0.1f);
-			spr.color = Color(1.0f, 1.0f, 1.0f, 1.0f);
-			instance_lists_[0].push_back(spr.toInstanceData());
-		}
+		instance_lists_[1].clear();
+		instance_lists_[2].clear();
+		instance_lists_[3].clear();
+		bullet_manager_.RenderBullets(atlas_, instance_lists_);
 
 		for (int i = 0; i < 4; i++) {
 			if (!instance_lists_[i].empty()) {
@@ -195,7 +213,7 @@ void Application::recreateSwapChain() {
 	swap_chain_.reset();
 
 	SwapChain::createSwapChain(window_.get(), device_.get(), physical_device_,
-	                           surface_, swap_chain_, swap_chain_images_,
+	                           surface_.get(), swap_chain_, swap_chain_images_,
 	                           swap_chain_image_format_, swap_chain_extent_);
 
 	ImageView::createImageViews(device_.get(), swap_chain_images_,

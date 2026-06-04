@@ -44,14 +44,12 @@ void Texture::createTextureImage(const vk::Device &device,
                                  const vk::PhysicalDevice &physical_device,
                                  const vk::CommandPool &command_pool,
                                  const vk::Queue &graphics_queue,
-                                 const std::string &path,
+                                 const ImageData &atlas,
                                  vk::UniqueImage &texture_image,
                                  vk::UniqueDeviceMemory &texture_image_memory) {
 
-	ImageData img = loadImage(path);
-
-	const vk::DeviceSize imageSize = static_cast<vk::DeviceSize>(img.width) *
-	                                 static_cast<vk::DeviceSize>(img.height) *
+	const vk::DeviceSize imageSize = static_cast<vk::DeviceSize>(atlas.width) *
+	                                 static_cast<vk::DeviceSize>(atlas.height) *
 	                                 4;
 
 	vk::BufferCreateInfo bufferInfo{{},
@@ -75,14 +73,11 @@ void Texture::createTextureImage(const vk::Device &device,
 
 	void *data = device.mapMemory(stagingBufferMemory.get(), 0, imageSize);
 
-	memcpy(data, img.pixels, static_cast<size_t>(imageSize));
+	memcpy(data, atlas.pixels.data(), static_cast<size_t>(imageSize));
 
 	device.unmapMemory(stagingBufferMemory.get());
-
-	img.free();
-
-	createImage(device, physical_device, static_cast<uint32_t>(img.width),
-	            static_cast<uint32_t>(img.height), vk::Format::eR8G8B8A8Srgb,
+	createImage(device, physical_device, static_cast<uint32_t>(atlas.width),
+	            static_cast<uint32_t>(atlas.height), vk::Format::eR8G8B8A8Srgb,
 	            vk::ImageTiling::eOptimal,
 	            vk::ImageUsageFlagBits::eTransferDst |
 	                vk::ImageUsageFlagBits::eSampled,
@@ -94,8 +89,8 @@ void Texture::createTextureImage(const vk::Device &device,
 	                      vk::ImageLayout::eTransferDstOptimal);
 
 	copyBufferToImage(device, command_pool, graphics_queue, stagingBuffer.get(),
-	                  texture_image.get(), static_cast<uint32_t>(img.width),
-	                  static_cast<uint32_t>(img.height));
+	                  texture_image.get(), static_cast<uint32_t>(atlas.width),
+	                  static_cast<uint32_t>(atlas.height));
 
 	transitionImageLayout(device, command_pool, graphics_queue,
 	                      texture_image.get(),

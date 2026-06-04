@@ -8,18 +8,17 @@
 namespace zenithstgv {
 ImageData loadImage(const std::string &path) {
 	ImageData data;
-	data.pixels = stbi_load(path.c_str(), &data.width, &data.height,
-	                        &data.channels, STBI_rgb_alpha);
-	if (!data.pixels) {
+	int w, h, c;
+	unsigned char *raw = stbi_load(path.c_str(), &w, &h, &c, STBI_rgb_alpha);
+	if (!raw) {
 		throw std::runtime_error("failed to load texture: " + path);
 	}
-	return data;
-}
 
-void ImageData::free() {
-	if (pixels) {
-		stbi_image_free(pixels);
-		pixels = nullptr;
-	}
+	data.width = w;
+	data.height = h;
+	data.channels = 4;
+	data.pixels.assign(raw, raw + w * h * 4);
+	stbi_image_free(raw);
+	return data;
 }
 } // namespace zenithstgv

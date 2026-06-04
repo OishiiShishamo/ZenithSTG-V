@@ -10,6 +10,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include "instance_data.h"
+#include "texture_init.h"
 #include "vertex.h"
 #include "window/window.h"
 
@@ -29,13 +30,19 @@
 #include "vulkan_render/texture.h"
 #include "vulkan_render/vertex_buffer.h"
 
+#include "utility/atlas_builder.h"
 #include "utility/time_utl.h"
+
+#include "object/bullet.h"
+#include "object/object.h"
 
 namespace zenithstgv {
 class Application {
   public:
 	void run() {
 		initWindow(window_);
+		TextureInit::TexturesInit(atlas_);
+		bullet_manager_.InitManager();
 		initVulkan();
 		mainLoop();
 		cleanup();
@@ -45,7 +52,7 @@ class Application {
 	WindowPtr window_;
 	vk::UniqueInstance instance_;
 
-	vk::SurfaceKHR surface_;
+	vk::UniqueSurfaceKHR surface_;
 
 	vk::PhysicalDevice physical_device_;
 	vk::UniqueDevice device_;
@@ -77,7 +84,7 @@ class Application {
 	    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
 	    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}};
 
-	std::vector<uint16_t> indices_ = {0, 1, 2, 2, 3, 0};
+	std::vector<uint16_t> indices_ = {0, 1, 2, 0, 2, 3};
 
 	vk::UniqueBuffer vertex_buffer_;
 	vk::UniqueDeviceMemory vertex_buffer_memory_;
@@ -97,6 +104,10 @@ class Application {
 	vk::UniqueDescriptorSetLayout descriptor_set_layout_;
 	vk::UniqueDescriptorPool descriptor_pool_;
 	vk::DescriptorSet descriptor_set_;
+
+	AtlasBuilder atlas_ = AtlasBuilder(2048, 2048);
+
+	BulletManager bullet_manager_;
 
 	void initVulkan();
 	void mainLoop();

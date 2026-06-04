@@ -1,10 +1,4 @@
-﻿/**
- * @file Vec2D.h
- * @brief 2Dのベクトル関連 / 2D Vector Related.
- * @auther ZenithSTG Dev Team
- */
-
-#pragma once
+﻿#pragma once
 #ifndef ZENITHSTGV_INCLUDE_VEC2D_H_
 #define ZENITHSTGV_INCLUDE_VEC2D_H_
 
@@ -13,6 +7,15 @@
 #include <emmintrin.h>
 
 namespace zenithstgv {
+struct ScreenSize {
+	double w;
+	double h;
+
+	template <typename T, typename U>
+	ScreenSize(T w, U h)
+	    : w(static_cast<double>(w)), h(static_cast<double>(h)) {}
+};
+
 class alignas(16) Vec2D {
   public:
 	Vec2D(double x = 0, double y = 0) { xy_ = _mm_set_pd(y, x); }
@@ -99,6 +102,42 @@ class alignas(16) Vec2D {
 		if (len != 0.0) {
 			xy_ = _mm_div_pd(xy_, _mm_set1_pd(len));
 		}
+	}
+
+	[[nodiscard]] Vec2D ToNDC(const ScreenSize &s) const noexcept {
+		__m128d inv_size = _mm_set_pd(1.0 / s.h, 1.0 / s.w);
+		__m128d two = _mm_set1_pd(2.0);
+		__m128d one = _mm_set1_pd(1.0);
+		return Vec2D(
+		    _mm_sub_pd(_mm_mul_pd(_mm_mul_pd(xy_, inv_size), two), one));
+	}
+
+	[[nodiscard]] Vec2D FromNDC(const ScreenSize &s) const noexcept {
+		__m128d half_size = _mm_set_pd(s.h * 0.5, s.w * 0.5);
+		__m128d one = _mm_set1_pd(1.0);
+		return Vec2D(_mm_mul_pd(_mm_add_pd(xy_, one), half_size));
+	}
+
+	[[nodiscard]] Vec2D Clamp(const Vec2D &min_v,
+	                          const Vec2D &max_v) const noexcept {
+		return Vec2D(_mm_min_pd(_mm_max_pd(xy_, min_v.GetXY()), max_v.GetXY()));
+	}
+
+	[[nodiscard]] bool IsInScreen(const ScreenSize &s) const noexcept {
+		__m128d lo = _mm_setzero_pd();
+		__m128d hi = _mm_set_pd(s.h, s.w);
+		int ge = _mm_movemask_pd(_mm_cmpge_pd(xy_, lo));
+		int le = _mm_movemask_pd(_mm_cmple_pd(xy_, hi));
+		return (ge & le) == 0b11;
+	}
+
+	[[nodiscard]] bool IsInScreen(const ScreenSize &s,
+	                              double margin) const noexcept {
+		__m128d lo = _mm_set1_pd(-margin);
+		__m128d hi = _mm_set_pd(s.h + margin, s.w + margin);
+		int ge = _mm_movemask_pd(_mm_cmpge_pd(xy_, lo));
+		int le = _mm_movemask_pd(_mm_cmple_pd(xy_, hi));
+		return (ge & le) == 0b11;
 	}
 
   private:

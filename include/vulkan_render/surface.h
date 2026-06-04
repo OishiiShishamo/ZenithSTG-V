@@ -13,7 +13,7 @@ class Surface {
   public:
 	static void createSurface(SDL_Window *window,
 	                          const vk::UniqueInstance &instance,
-	                          vk::SurfaceKHR &surface);
+	                          vk::UniqueSurfaceKHR &surface);
 };
 } // namespace zenithstgv
 

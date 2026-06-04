@@ -6,13 +6,15 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include "utility/image_loader.h"
+
 namespace zenithstgv {
 class Texture {
   public:
 	static void createTextureImage(
 	    const vk::Device &device, const vk::PhysicalDevice &physical_device,
 	    const vk::CommandPool &command_pool, const vk::Queue &graphics_queue,
-	    const std::string &path, vk::UniqueImage &texture_image,
+	    const ImageData &atlas, vk::UniqueImage &texture_image,
 	    vk::UniqueDeviceMemory &texture_image_memory);
 
 	static void createTextureImageView(const vk::Device &device,

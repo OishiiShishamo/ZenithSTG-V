@@ -33,6 +33,22 @@ inline const zenithstgv::Vec2D kDefaultResolution(1600, 900);
 
 inline constexpr uint32_t kMaxInstances = 65536;
 
+inline constexpr uint32_t kMaxBullet = 8192;
+inline constexpr uint32_t kMaxLaser = 8192;
+
+#define kCenterX 960
+#define kCenterY 540
+#define kCenter Vec2D(kCenterX, kCenterY)
+
+inline constexpr int kBorderLeft = 0;     // 528
+inline constexpr int kBorderRight = 1920; // 1392
+inline constexpr int kBorderUp = 0;       // 35
+inline constexpr int kBorderDown = 1080;  // 1045
+
+inline constexpr int kGrazeEnabled = 1;
+inline constexpr int kBulletGrazeEveryFrame = 0;
+inline constexpr int kLaserGrazeEveryFrame = 1;
+
 inline constexpr int kMaxFramesInFlight = 2;
 
 const std::vector<const char *> validationLayers = {

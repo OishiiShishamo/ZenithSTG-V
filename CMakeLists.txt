@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(Vulkan REQUIRED)
 find_package(SDL3 REQUIRED)
 find_package(glm REQUIRED)
+find_package(TBB REQUIRED)
 
 file(GLOB_RECURSE SRC CONFIGURE_DEPENDS
     src/*.cpp
@@ -23,6 +24,7 @@ target_link_libraries(zenith-stg-v PRIVATE
     Vulkan::Vulkan
     SDL3::SDL3
     glm::glm
+	TBB::tbb
 )
 
 if(MSVC)

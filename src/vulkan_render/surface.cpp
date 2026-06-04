@@ -9,15 +9,18 @@
 namespace zenithstgv {
 void Surface::createSurface(SDL_Window *window,
                             const vk::UniqueInstance &instance,
-                            vk::SurfaceKHR &surface) {
-	VkSurfaceKHR rawSurface{};
+                            vk::UniqueSurfaceKHR &surface) {
+	VkSurfaceKHR raw{};
 
-	if (!SDL_Vulkan_CreateSurface(window,
-	                              static_cast<VkInstance>(instance.get()),
-	                              nullptr, &rawSurface)) {
+	if (!SDL_Vulkan_CreateSurface(
+	        window, static_cast<VkInstance>(instance.get()), nullptr, &raw)) {
 		throw std::runtime_error(SDL_GetError());
 	}
 
-	surface = rawSurface;
+	surface = vk::UniqueSurfaceKHR(
+	    vk::SurfaceKHR(raw),
+	    vk::detail::ObjectDestroy<vk::Instance,
+	                              VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>(
+	        instance.get()));
 }
 } // namespace zenithstgv

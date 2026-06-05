@@ -41,13 +41,6 @@ class alignas(16) Vec2D {
 		return Vec2D(_mm_div_pd(xy_, rhs.xy_));
 	}
 
-	Vec2D &operator=(const Vec2D &rhs) {
-		if (this != &rhs) {
-			xy_ = rhs.xy_;
-			return *this;
-		}
-		return *this;
-	}
 	Vec2D &operator+=(const Vec2D &rhs) {
 		xy_ = _mm_add_pd(xy_, rhs.xy_);
 		return *this;

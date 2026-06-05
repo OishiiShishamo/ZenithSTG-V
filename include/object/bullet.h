@@ -21,6 +21,7 @@
 #include "global.h"
 #include "instance_data.h"
 #include "object/object.h"
+#include "player.h"
 #include "utility/atlas_builder.h"
 #include "vec2d.h"
 
@@ -63,13 +64,13 @@ class Bullet : public Object {
 	    std::array<std::vector<InstanceData>, 4> &instance_lists) override;
 
   private:
-	void MoveFunc(ObjectManager &om) override;
+	void MoveFunc(ObjectManager &om, Player &player) override;
 	void KillObject(ObjectManager &om) override;
-	int ColliCheckObject(ObjectManager &om) override;
-	void GrazeObject(ObjectManager &om) override;
+	int ColliCheckObject(ObjectManager &om, Player &player) override;
+	void GrazeObject(ObjectManager &om, Player &player) override;
 	int CheckPosBounds(ObjectManager &om) override;
 
-	int CheckCollisionAndBounds(ObjectManager &om) override;
+	int CheckCollisionAndBounds(ObjectManager &om, Player &player) override;
 };
 
 class BulletManager : public ObjectManager {
@@ -82,16 +83,16 @@ class BulletManager : public ObjectManager {
 	 * @see ObjectParams 引数の詳細はこちらを参照 / See here for details of the
 	 * argument.
 	 */
-	int CreateBullet(long long t, const Vec2D &pos, const Color &color,
-	                 std::string style, BlendMode blend, float pal, int is_col,
-	                 double start_col_size, double end_col_size,
-	                 int col_size_ease_type, int col_size_ease_time,
-	                 double start_size, double end_size, int size_ease_type,
-	                 int size_ease_time, int aim, double start_angle,
-	                 double end_angle, int angle_ease_type, int angle_ease_time,
-	                 double start_speed, double end_speed, int speed_ease_type,
-	                 int speed_ease_time, int id, int priority,
-	                 const std::vector<std::any> &params);
+	int CreateBullet(long long t, const Player &player, const Vec2D &pos,
+	                 const Color &color, std::string style, BlendMode blend,
+	                 float pal, int is_col, double start_col_size,
+	                 double end_col_size, int col_size_ease_type,
+	                 int col_size_ease_time, double start_size, double end_size,
+	                 int size_ease_type, int size_ease_time, int aim,
+	                 double start_angle, double end_angle, int angle_ease_type,
+	                 int angle_ease_time, double start_speed, double end_speed,
+	                 int speed_ease_type, int speed_ease_time, int id,
+	                 int priority, const std::vector<std::any> &params);
 
 	/**
 	 * @brief 複数の弾の生成 / Create Multiple Bullet.
@@ -100,14 +101,14 @@ class BulletManager : public ObjectManager {
 	 * argument.
 	 */
 	void CreateBulletGroup(
-	    long long t, const Vec2D &pos, const Color &color, std::string style,
-	    BlendMode blend, float pal, int is_col, double start_col_size,
-	    double end_col_size, int col_size_ease_type, int col_size_ease_time,
-	    double start_size, double end_size, int size_ease_type,
-	    int size_ease_time, int way, double spread, int aim, double start_angle,
-	    double end_angle, int angle_ease_type, int angle_ease_time,
-	    double start_speed, double end_speed, int speed_ease_type,
-	    int speed_ease_time, int id = 0, int priority = 0,
+	    long long t, const Player &player, const Vec2D &pos, const Color &color,
+	    std::string style, BlendMode blend, float pal, int is_col,
+	    double start_col_size, double end_col_size, int col_size_ease_type,
+	    int col_size_ease_time, double start_size, double end_size,
+	    int size_ease_type, int size_ease_time, int way, double spread, int aim,
+	    double start_angle, double end_angle, int angle_ease_type,
+	    int angle_ease_time, double start_speed, double end_speed,
+	    int speed_ease_type, int speed_ease_time, int id = 0, int priority = 0,
 	    const std::vector<std::any> &params = {});
 
 	/**
@@ -117,14 +118,15 @@ class BulletManager : public ObjectManager {
 	 * @see ObjectParams 引数の詳細はこちらを参照 / See here for details of the
 	 * argument.
 	 */
-	void CreateSmartBulletGroup(long long t, ObjectParams param);
+	void CreateSmartBulletGroup(long long t, const Player &player,
+	                            ObjectParams param);
 
 	void PushBlankObjects(int idx) override;
 
 	/**
 	 * @brief 弾の動作と描画 / Bullet Movement and Drawing.
 	 */
-	void MoveBullets(long long t);
+	void MoveBullets(long long t, Player &player);
 
 	void
 	RenderBullets(const AtlasBuilder &atlas,
@@ -149,7 +151,7 @@ class BulletManager : public ObjectManager {
 	std::unordered_map<std::string, double> bullets_graze_size;
 	long long bullet_index = 0;
 
-	void ParallelUpdateBullets(long long t,
+	void ParallelUpdateBullets(long long t, Player &player,
 	                           std::array<Bullet, kMaxBullet> &bullets);
 };
 } // namespace zenithstgv

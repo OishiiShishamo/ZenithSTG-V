@@ -59,7 +59,7 @@ void GraphicsPipeline::createGraphicsPipelines(
 	    vk::False,
 	    vk::PolygonMode::eFill,
 	    vk::CullModeFlagBits::eBack,
-	    vk::FrontFace::eCounterClockwise,
+	    vk::FrontFace::eClockwise,
 	    vk::False,
 	    0.0f,
 	    0.0f,

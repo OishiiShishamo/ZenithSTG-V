@@ -21,6 +21,7 @@
 #include "global.h"
 #include "instance_data.h"
 #include "main.h"
+#include "player.h"
 #include "utility/atlas_builder.h"
 #include "vec2d.h"
 
@@ -211,7 +212,7 @@ class Object {
 	/**
 	 * @brief オブジェクトの動作など。 / Object behavior, etc.
 	 */
-	virtual void UpdateObject(long long t, ObjectManager &om);
+	virtual void UpdateObject(long long t, ObjectManager &om, Player &player);
 
 	/**
 	 * @brief オブジェクトの描画。 / Object drawing.
@@ -236,13 +237,13 @@ class Object {
 	/**
 	 * @brief オブジェクトの当たり判定 / Collision check.
 	 */
-	virtual int ColliCheckObject(ObjectManager &om);
+	virtual int ColliCheckObject(ObjectManager &om, Player &player);
 
 	/**
 	 * @brief オブジェクトの掠り判定とスコアの上昇処理 / Processing of object
 	 * snatching judgment and score increase.
 	 */
-	virtual void GrazeObject(ObjectManager &om);
+	virtual void GrazeObject(ObjectManager &om, Player &player);
 
 	/**
 	 * @brief 枠外判定 / Out-of-bounds check.
@@ -252,12 +253,12 @@ class Object {
 	/**
 	 * @brief 当たり判定と枠外判定 / Collision and out-of-bounds check.
 	 */
-	virtual int CheckCollisionAndBounds(ObjectManager &om);
+	virtual int CheckCollisionAndBounds(ObjectManager &om, Player &player);
 
 	/**
 	 * @brief 移動及びid毎の分岐処理 / Branch processing for each move and id.
 	 */
-	virtual void MoveFunc(ObjectManager &om);
+	virtual void MoveFunc(ObjectManager &om, Player &player);
 
 	// TODO: KillObjectを全オブジェクトで実装する.
 	virtual void KillObject(ObjectManager &om);
@@ -268,13 +269,13 @@ class ObjectManager {
 	virtual void InitManager();
 	virtual void PushBlankObjects(int idx);
 
-	virtual BlendMode GetDefaultObjectBlend(std::string style);
+	virtual BlendMode GetDefaultObjectBlend(std::string style) = 0;
 
-	virtual int GetObjectGraphSize(std::string style);
+	virtual int GetObjectGraphSize(std::string style) = 0;
 
-	virtual double GetObjectColSize(std::string style);
+	virtual double GetObjectColSize(std::string style) = 0;
 
-	virtual double GetObjectGrazeSize(std::string style);
+	virtual double GetObjectGrazeSize(std::string style) = 0;
 };
 } // namespace zenithstgv
 

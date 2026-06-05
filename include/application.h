@@ -31,6 +31,7 @@
 #include "vulkan_render/vertex_buffer.h"
 
 #include "utility/atlas_builder.h"
+#include "utility/keyboard.h"
 #include "utility/time_utl.h"
 
 #include "object/bullet.h"
@@ -43,6 +44,7 @@ class Application {
 		initWindow(window_);
 		TextureInit::TexturesInit(atlas_);
 		bullet_manager_.InitManager();
+		InitKeyboard(kb_);
 		initVulkan();
 		mainLoop();
 		cleanup();
@@ -106,6 +108,8 @@ class Application {
 	vk::DescriptorSet descriptor_set_;
 
 	AtlasBuilder atlas_ = AtlasBuilder(2048, 2048);
+
+	Keyboard kb_;
 
 	BulletManager bullet_manager_;
 

@@ -13,20 +13,19 @@
 #include "vec2d.h"
 
 namespace zenithstgv {
-void Object::UpdateObject(long long t, ObjectManager &om) {
+void Object::UpdateObject(long long t, ObjectManager &om, Player &player) {
 	if (!(flags_ & kIsAlive))
 		return;
 
 	UpdateEase(t);
 
 	vec_ = AngleToVec2D(angle_);
-	GrazeObject(om);
-	MoveFunc(om);
+	GrazeObject(om, player);
+	MoveFunc(om, player);
 }
 
-void Object::DrawObject(
-    const AtlasBuilder &atlas,
-    std::array<std::vector<InstanceData>, 4> &instance_lists) {}
+void Object::DrawObject(const AtlasBuilder &,
+                        std::array<std::vector<InstanceData>, 4> &) {}
 
 void Object::UpdateEase(long long t) {
 	double elapsed_frame = t - pop_t_;
@@ -65,15 +64,15 @@ void Object::UpdateEase(long long t) {
 
 void Object::MoveObject(double speed) { pos_ += vec_ * speed; }
 
-int Object::ColliCheckObject(ObjectManager &om) { return 0; }
+int Object::ColliCheckObject(ObjectManager &, Player &) { return 0; }
 
-void Object::GrazeObject(ObjectManager &om) {}
+void Object::GrazeObject(ObjectManager &, Player &) {}
 
-int Object::CheckPosBounds(ObjectManager &om) { return 0; }
+int Object::CheckPosBounds(ObjectManager &) { return 0; }
 
-int Object::CheckCollisionAndBounds(ObjectManager &om) {
+int Object::CheckCollisionAndBounds(ObjectManager &om, Player &player) {
 	if (flags_ & kIsCol) {
-		if (ColliCheckObject(om)) {
+		if (ColliCheckObject(om, player)) {
 			flags_ &= ~kIsAlive;
 			return 1;
 		}
@@ -85,18 +84,18 @@ int Object::CheckCollisionAndBounds(ObjectManager &om) {
 	return 0;
 }
 
-void Object::MoveFunc(ObjectManager &om) {
+void Object::MoveFunc(ObjectManager &om, Player &player) {
 	switch (id_) {
 	case 0:
 	default: {
 		int needsMultiStep =
-		    speed_ >= col_size_; // + player_.col_size_ && flags_ & kIsCol;
+		    speed_ >= col_size_ + player.col_size_ && flags_ & kIsCol;
 		if (needsMultiStep) {
 			int step = static_cast<int>(std::ceil(speed_ / 1.0f));
 			for (int i = 0; i < step; i++) {
 				MoveObject(speed_ / step);
 				if (flags_ & kIsCol) {
-					ColliCheckObject(om);
+					ColliCheckObject(om, player);
 				}
 				if (CheckPosBounds(om)) {
 					flags_ &= ~kIsAlive;
@@ -106,7 +105,7 @@ void Object::MoveFunc(ObjectManager &om) {
 		} else {
 			MoveObject(speed_);
 			if (flags_ & kIsCol) {
-				ColliCheckObject(om);
+				ColliCheckObject(om, player);
 			}
 			if (CheckPosBounds(om))
 				flags_ &= ~kIsAlive;
@@ -115,16 +114,8 @@ void Object::MoveFunc(ObjectManager &om) {
 	}
 }
 
-void Object::KillObject(ObjectManager &om) { flags_ &= ~kIsAlive; }
+void Object::KillObject(ObjectManager &) { flags_ &= ~kIsAlive; }
 
 void ObjectManager::InitManager() {}
-void ObjectManager::PushBlankObjects(int idx) {}
-
-BlendMode ObjectManager::GetDefaultObjectBlend(std::string style) {}
-
-int ObjectManager::GetObjectGraphSize(std::string style) {}
-
-double ObjectManager::GetObjectColSize(std::string style) {}
-
-double ObjectManager::GetObjectGrazeSize(std::string style) {}
+void ObjectManager::PushBlankObjects(int) {}
 } // namespace zenithstgv

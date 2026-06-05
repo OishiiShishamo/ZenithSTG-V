@@ -14,6 +14,7 @@
 #include "instance_data.h"
 #include "main.h"
 #include "object/object.h"
+#include "player.h"
 #include "vec2d.h"
 
 namespace zenithstgv {
@@ -25,8 +26,9 @@ void Bullet::DrawObject(
 		return;
 	std::array<Vec2D, 4> world;
 	double half = size_ / 2 * 20;
-	std::array<Vec2D, 4> local = {Vec2D(-half, -half), Vec2D(-half, half),
-	                              Vec2D(half, half), Vec2D(half, -half)};
+	std::array<Vec2D, 4> local = {Vec2D(-half, -half), Vec2D(half, -half),
+	                              Vec2D(half, half), Vec2D(-half, half)};
+
 	for (int i = 0; i < 4; ++i) {
 		Vec2D rot = RotatePoint(local[i], show_angle_ + kPi / 2);
 		world[i] = pos_ + rot;
@@ -44,27 +46,28 @@ void Bullet::DrawObject(
 	    spr.toInstanceData(atlas.getEntries().at(spr.uv_key)));
 }
 
-int Bullet::ColliCheckObject(ObjectManager &om) {
-	// if (ColPointAndCircle(pos_, player_.GetPos(),
-	//                       om.GetObjectColSize(style_) * col_size_ +
-	//                       player_.col_size_)) {
-	//	player_.HitPlayer();
-	//	return 1;
-	// }
+int Bullet::ColliCheckObject(ObjectManager &om, Player &player) {
+	if (ColPointAndCircle(pos_, player.GetPos(),
+	                      om.GetObjectColSize(style_) * col_size_ +
+	                          player.col_size_)) {
+		player.HitPlayer();
+		return 1;
+	}
 	return 0;
 }
 
-void Bullet::GrazeObject(ObjectManager &om) {
+void Bullet::GrazeObject(ObjectManager &om, Player &player) {
 	if (kGrazeEnabled == 0)
 		return;
 	if ((flags_ & kIsGraze) == 0)
 		return;
-	// if (ColPointAndCircle(pos_, player_.GetPos(),
-	//                       om.GetObjectGrazeSize(style_) * col_size_ +
-	//                       player_.col_size_ + kGrazeRange)) {
-	// Graze();
-	if (kBulletGrazeEveryFrame == 0) {
-		flags_ &= ~kIsGraze;
+	if (ColPointAndCircle(pos_, player.GetPos(),
+	                      om.GetObjectGrazeSize(style_) * col_size_ +
+	                          player.col_size_)) {
+		// Graze();
+		if (kBulletGrazeEveryFrame == 0) {
+			flags_ &= ~kIsGraze;
+		}
 	}
 }
 
@@ -82,9 +85,9 @@ int Bullet::CheckPosBounds(ObjectManager &om) {
 	return 0;
 }
 
-int Bullet::CheckCollisionAndBounds(ObjectManager &om) {
+int Bullet::CheckCollisionAndBounds(ObjectManager &om, Player &player) {
 	if (flags_ & kIsCol) {
-		if (ColliCheckObject(om)) {
+		if (ColliCheckObject(om, player)) {
 			KillObject(om);
 			return 1;
 		}
@@ -96,26 +99,26 @@ int Bullet::CheckCollisionAndBounds(ObjectManager &om) {
 	return 0;
 }
 
-void Bullet::MoveFunc(ObjectManager &om) {
+void Bullet::MoveFunc(ObjectManager &om, Player &player) {
 	switch (id_) {
 	case 0:
 	default: {
-		if (speed_ >= col_size_) { // + player_.col_size_ && flags_ & kIsCol) {
+		if (speed_ >= col_size_ + player.col_size_ && flags_ & kIsCol) {
 			Vec2D old_pos = pos_;
 			MoveObject(speed_);
-			// if (ColPointAndCircleAdv(player_.GetPos(), old_pos, pos_,
-			//                          col_size_)) {
-			//  player_.HitPlayer();
-			//	KillObject();
-			//	return;
-			//}
+			if (ColPointAndCircleAdv(player.GetPos(), old_pos, pos_,
+			                         col_size_ + player.col_size_)) {
+				player.HitPlayer();
+				KillObject(om);
+				return;
+			}
 			if (CheckPosBounds(om)) {
 				KillObject(om);
 				return;
 			}
 		} else {
 			MoveObject(speed_);
-			if (CheckCollisionAndBounds(om))
+			if (CheckCollisionAndBounds(om, player))
 				return;
 		}
 		break;
@@ -133,7 +136,7 @@ void BulletManager::InitManager() {
 
 	bullets_graph_size["bullet_1"] = 20;
 
-	bullets_col_size["bullet_1"] = 18;
+	bullets_col_size["bullet_1"] = 9;
 
 	bullets_graze_size["bullet_1"] = 30;
 
@@ -149,13 +152,14 @@ void BulletManager::PushBlankObjects(int idx) {
 }
 
 int BulletManager::CreateBullet(
-    long long t, const Vec2D &pos, const Color &color, std::string style,
-    BlendMode blend, float pal, int is_col, double start_col_size,
-    double end_col_size, int col_size_ease_type, int col_size_ease_time,
-    double start_size, double end_size, int size_ease_type, int size_ease_time,
-    int aim, double start_angle, double end_angle, int angle_ease_type,
-    int angle_ease_time, double start_speed, double end_speed,
-    int speed_ease_type, int speed_ease_time, int id, int priority,
+    long long t, const Player &player, const Vec2D &pos, const Color &color,
+    std::string style, BlendMode blend, float pal, int is_col,
+    double start_col_size, double end_col_size, int col_size_ease_type,
+    int col_size_ease_time, double start_size, double end_size,
+    int size_ease_type, int size_ease_time, int aim, double start_angle,
+    double end_angle, int angle_ease_type, int angle_ease_time,
+    double start_speed, double end_speed, int speed_ease_type,
+    int speed_ease_time, int id, int priority,
     const std::vector<std::any> &params) {
 	// sound_mng_.ReserveSe(se);
 	if (blank_bullets.empty())
@@ -177,13 +181,13 @@ int BulletManager::CreateBullet(
 	bullets[idx].end_size_ = end_size;
 	bullets[idx].size_ease_type_ = size_ease_type;
 	bullets[idx].size_ease_time_ = size_ease_time;
-	// if (aim == kAimTrue) {
-	//	bullets[idx].start_angle_ = player_.AimPlayer(pos) + start_angle;
-	//	bullets[idx].end_angle_ = player_.AimPlayer(pos) + end_angle;
-	// } else {
-	bullets[idx].start_angle_ = start_angle;
-	bullets[idx].end_angle_ = end_angle;
-	//}
+	if (aim == kAimTrue) {
+		bullets[idx].start_angle_ = player_.AimPlayer(pos) + start_angle;
+		bullets[idx].end_angle_ = player_.AimPlayer(pos) + end_angle;
+	} else {
+		bullets[idx].start_angle_ = start_angle;
+		bullets[idx].end_angle_ = end_angle;
+	}
 	bullets[idx].angle_ease_type_ = angle_ease_type;
 	bullets[idx].angle_ease_time_ = angle_ease_time;
 	bullets[idx].start_speed_ = start_speed;
@@ -204,79 +208,85 @@ int BulletManager::CreateBullet(
 }
 
 void BulletManager::CreateBulletGroup(
-    long long t, const Vec2D &pos, const Color &color, std::string style,
-    BlendMode blend, float pal, int is_col, double start_col_size,
-    double end_col_size, int col_size_ease_type, int col_size_ease_time,
-    double start_size, double end_size, int size_ease_type, int size_ease_time,
-    int way, double spread, int aim, double start_angle, double end_angle,
-    int angle_ease_type, int angle_ease_time, double start_speed,
-    double end_speed, int speed_ease_type, int speed_ease_time, int id,
-    int priority, const std::vector<std::any> &params) {
+    long long t, const Player &player, const Vec2D &pos, const Color &color,
+    std::string style, BlendMode blend, float pal, int is_col,
+    double start_col_size, double end_col_size, int col_size_ease_type,
+    int col_size_ease_time, double start_size, double end_size,
+    int size_ease_type, int size_ease_time, int way, double spread, int aim,
+    double start_angle, double end_angle, int angle_ease_type,
+    int angle_ease_time, double start_speed, double end_speed,
+    int speed_ease_type, int speed_ease_time, int id, int priority,
+    const std::vector<std::any> &params) {
 	// sound_mng_.ReserveSe(se);
 	switch (aim) {
 	case kAimFalse:
 		for (int i = 0; i < way; i++) {
-			if (CreateBullet(
-			        t, pos, color, style, blend, pal, is_col, start_col_size,
-			        end_col_size, col_size_ease_type, col_size_ease_time,
-			        start_size, end_size, size_ease_type, size_ease_time, 0,
-			        spread / way * i + start_angle - spread / 2,
-			        spread / way * i + end_angle - spread / 2, angle_ease_type,
-			        angle_ease_time, start_speed, end_speed, speed_ease_type,
-			        speed_ease_time, id, priority, params))
+			if (CreateBullet(t, player, pos, color, style, blend, pal, is_col,
+			                 start_col_size, end_col_size, col_size_ease_type,
+			                 col_size_ease_time, start_size, end_size,
+			                 size_ease_type, size_ease_time, 0,
+			                 spread / way * i + start_angle - spread / 2,
+			                 spread / way * i + end_angle - spread / 2,
+			                 angle_ease_type, angle_ease_time, start_speed,
+			                 end_speed, speed_ease_type, speed_ease_time, id,
+			                 priority, params))
 				return;
 		}
 		break;
 	case kAimTrue:
 		for (int i = 0; i < way; i++) {
-			if (CreateBullet(
-			        t, pos, color, style, blend, pal, is_col, start_col_size,
-			        end_col_size, col_size_ease_type, col_size_ease_time,
-			        start_size, end_size, size_ease_type, size_ease_time, 1,
-			        spread / way * i + start_angle - spread / 2,
-			        spread / way * i + end_angle - spread / 2, angle_ease_type,
-			        angle_ease_time, start_speed, end_speed, speed_ease_type,
-			        speed_ease_time, id, priority, params))
+			if (CreateBullet(t, player, pos, color, style, blend, pal, is_col,
+			                 start_col_size, end_col_size, col_size_ease_type,
+			                 col_size_ease_time, start_size, end_size,
+			                 size_ease_type, size_ease_time, 1,
+			                 spread / way * i + start_angle - spread / 2,
+			                 spread / way * i + end_angle - spread / 2,
+			                 angle_ease_type, angle_ease_time, start_speed,
+			                 end_speed, speed_ease_type, speed_ease_time, id,
+			                 priority, params))
 				return;
 		}
 		break;
 	case kAimOffset:
 		for (int i = 0; i < way; i++) {
-			if (CreateBullet(
-			        t, pos, color, style, blend, pal, is_col, start_col_size,
-			        end_col_size, col_size_ease_type, col_size_ease_time,
-			        start_size, end_size, size_ease_type, size_ease_time, 1,
-			        spread / way * i + start_angle + spread / (way * 2) -
-			            spread / 2,
-			        spread / way * i + end_angle + spread / (way * 2) -
-			            spread / 2,
-			        angle_ease_type, angle_ease_time, start_speed, end_speed,
-			        speed_ease_type, speed_ease_time, id, priority, params))
+			if (CreateBullet(t, player, pos, color, style, blend, pal, is_col,
+			                 start_col_size, end_col_size, col_size_ease_type,
+			                 col_size_ease_time, start_size, end_size,
+			                 size_ease_type, size_ease_time, 1,
+			                 spread / way * i + start_angle +
+			                     spread / (way * 2) - spread / 2,
+			                 spread / way * i + end_angle + spread / (way * 2) -
+			                     spread / 2,
+			                 angle_ease_type, angle_ease_time, start_speed,
+			                 end_speed, speed_ease_type, speed_ease_time, id,
+			                 priority, params))
 				return;
 		}
 		break;
 	default:
 		for (int i = 0; i < way; i++) {
-			if (CreateBullet(
-			        t, pos, color, style, blend, pal, is_col, start_col_size,
-			        end_col_size, col_size_ease_type, col_size_ease_time,
-			        start_size, end_size, size_ease_type, size_ease_time, 0,
-			        spread / way * i + start_angle - spread / 2,
-			        spread / way * i + end_angle - spread / 2, angle_ease_type,
-			        angle_ease_time, start_speed, end_speed, speed_ease_type,
-			        speed_ease_time, id, priority, params))
+			if (CreateBullet(t, player, pos, color, style, blend, pal, is_col,
+			                 start_col_size, end_col_size, col_size_ease_type,
+			                 col_size_ease_time, start_size, end_size,
+			                 size_ease_type, size_ease_time, 0,
+			                 spread / way * i + start_angle - spread / 2,
+			                 spread / way * i + end_angle - spread / 2,
+			                 angle_ease_type, angle_ease_time, start_speed,
+			                 end_speed, speed_ease_type, speed_ease_time, id,
+			                 priority, params))
 				return;
 		}
 		break;
 	}
 }
 
-void BulletManager::CreateSmartBulletGroup(long long t, ObjectParams param) {
+void BulletManager::CreateSmartBulletGroup(long long t, const Player &player,
+                                           ObjectParams param) {
 	// sound_mng_.ReserveSe(param.se);
 	switch (param.aim) {
 	case kAimFalse:
 		for (int i = 0; i < param.way; i++) {
-			if (CreateBullet(t, param.pos, param.color, param.style,
+			if (CreateBullet(t, player, param.pos, param.color, param.style,
 			                 param.blend, param.pal, param.is_col,
 			                 param.start_col_size, param.end_col_size,
 			                 param.col_size_ease_type, param.col_size_ease_time,
@@ -295,7 +305,7 @@ void BulletManager::CreateSmartBulletGroup(long long t, ObjectParams param) {
 		break;
 	case kAimTrue:
 		for (int i = 0; i < param.way; i++) {
-			if (CreateBullet(t, param.pos, param.color, param.style,
+			if (CreateBullet(t, player, param.pos, param.color, param.style,
 			                 param.blend, param.pal, param.is_col,
 			                 param.start_col_size, param.end_col_size,
 			                 param.col_size_ease_type, param.col_size_ease_time,
@@ -315,7 +325,7 @@ void BulletManager::CreateSmartBulletGroup(long long t, ObjectParams param) {
 	case kAimOffset:
 		for (int i = 0; i < param.way; i++) {
 			if (CreateBullet(
-			        t, param.pos, param.color, param.style, param.blend,
+			        t, player, param.pos, param.color, param.style, param.blend,
 			        param.pal, param.is_col, param.start_col_size,
 			        param.end_col_size, param.col_size_ease_type,
 			        param.col_size_ease_time, param.start_size, param.end_size,
@@ -333,7 +343,7 @@ void BulletManager::CreateSmartBulletGroup(long long t, ObjectParams param) {
 		break;
 	default:
 		for (int i = 0; i < param.way; i++) {
-			if (CreateBullet(t, param.pos, param.color, param.style,
+			if (CreateBullet(t, player, param.pos, param.color, param.style,
 			                 param.blend, param.pal, param.is_col,
 			                 param.start_col_size, param.end_col_size,
 			                 param.col_size_ease_type, param.col_size_ease_time,
@@ -354,13 +364,14 @@ void BulletManager::CreateSmartBulletGroup(long long t, ObjectParams param) {
 }
 
 void BulletManager::ParallelUpdateBullets(
-    long long t, std::array<Bullet, kMaxBullet> &bullets) {
-	std::for_each(std::execution::par, bullets.begin(), bullets.end(),
-	              [this, t](Bullet &B) { B.UpdateObject(t, *this); });
+    long long t, Player &player, std::array<Bullet, kMaxBullet> &bullets) {
+	std::for_each(
+	    std::execution::par, bullets.begin(), bullets.end(),
+	    [this, t, &player](Bullet &B) { B.UpdateObject(t, *this, player); });
 }
 
-void BulletManager::MoveBullets(long long t) {
-	ParallelUpdateBullets(t, bullets);
+void BulletManager::MoveBullets(long long t, Player &player) {
+	ParallelUpdateBullets(t, player, bullets);
 }
 
 void BulletManager::RenderBullets(

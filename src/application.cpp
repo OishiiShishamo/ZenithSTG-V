@@ -118,9 +118,13 @@ void Application::mainLoop() {
 
 	while (running) {
 		time_mng.ElapsedTime();
+		int i = 0;
 		while (t != time_mng.target_t_) {
 			t++;
+			i++;
 		}
+		if (i > 1)
+			std::cout << i << std::endl;
 
 		elapsed_time = time_mng.NSec2Double(time_mng.Timer());
 
@@ -137,30 +141,34 @@ void Application::mainLoop() {
 			break;
 		}
 
+		kb_.Update();
+
 		if (t % 1 == 0) {
 			ObjectParams p;
 			p.pos = Vec2D(960, 540);
 			p.style = "bullet_1";
 			p.color = GamingColor(t);
 			p.blend = BlendMode::kNormal;
-			p.is_col = 0;
-			p.way = 128;
+			p.is_col = 1;
+			p.way = 32;
 			p.spread = kTau;
-			p.start_angle = sin(t * kPi / 60) * 360;
-			p.end_angle = sin(t * kPi / 60) * 360 + 30;
+			p.start_angle = sin(t * kPi / 60) * 60;
+			p.end_angle = sin(t * kPi / 60) * (60 + 30);
 			p.angle_ease_time = 60;
 			p.angle_ease_type = kEaseInQuad;
 			p.start_speed = 6.0;
 			p.end_speed = 6.0;
-			bullet_manager_.CreateSmartBulletGroup(t, p);
+			bullet_manager_.CreateSmartBulletGroup(t, player_, p);
 		}
 
-		bullet_manager_.MoveBullets(t);
+		player_.RoutinePlayer(kb_);
+		bullet_manager_.MoveBullets(t, player_);
 
 		instance_lists_[0].clear();
 		instance_lists_[1].clear();
 		instance_lists_[2].clear();
 		instance_lists_[3].clear();
+		player_.RenderPlayer(atlas_, instance_lists_);
 		bullet_manager_.RenderBullets(atlas_, instance_lists_);
 
 		for (int i = 0; i < 4; i++) {

@@ -30,8 +30,6 @@ bool Draw::drawFrame(
 	(void)device.waitForFences(in_flight_fences[current_frame].get(), VK_TRUE,
 	                           UINT64_MAX);
 
-	device.resetFences(in_flight_fences[current_frame].get());
-
 	auto [result, imageIndex] = device.acquireNextImageKHR(
 	    swap_chain, UINT64_MAX,
 	    image_available_semaphores[current_frame].get());
@@ -39,6 +37,8 @@ bool Draw::drawFrame(
 	if (result == vk::Result::eErrorOutOfDateKHR) {
 		return true;
 	}
+
+	device.resetFences(in_flight_fences[current_frame].get());
 
 	if (result != vk::Result::eSuccess &&
 	    result != vk::Result::eSuboptimalKHR) {
@@ -73,9 +73,10 @@ bool Draw::drawFrame(
 
 	result = present_queue.presentKHR(presentInfo);
 
-	if (result == vk::Result::eErrorOutOfDateKHR ||
-	    result == vk::Result::eSuboptimalKHR) {
-
+	if (result == vk::Result::eErrorOutOfDateKHR) {
+		return true;
+	}
+	if (result == vk::Result::eSuboptimalKHR) {
 		return true;
 	}
 

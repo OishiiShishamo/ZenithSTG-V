@@ -145,7 +145,7 @@ void Application::mainLoop() {
 		kb_.Update();
 
 		for (int i = 1; i <= 5; i++) {
-			if (t % 1 == 0) {
+			if (t % 5 == 0) {
 				ObjectParams p;
 				p.pos = Vec2D(960, 540) +
 				        AngleToVec2D(kPi / 180 * 144 * i + kPi / 180 * t) * 200;
@@ -164,7 +164,7 @@ void Application::mainLoop() {
 				p.start_speed = 6.0;
 				p.end_speed = 6.0;
 				laser_manager_->CreateSmartLaserGroup(t, player_, p);
-				p.way = 64;
+				p.way = 16;
 				p.start_speed = 8.0;
 				p.end_speed = 8.0;
 				bullet_manager_->CreateSmartBulletGroup(t, player_, p);
@@ -210,6 +210,12 @@ void Application::mainLoop() {
 		time_mng.FrameWait();
 	}
 
+	for (auto &fence : in_flight_fences_) {
+		(void)device_->waitForFences(fence.get(), VK_TRUE, UINT64_MAX);
+	}
+
+	graphics_queue_.waitIdle();
+	present_queue_.waitIdle();
 	device_->waitIdle();
 }
 
@@ -225,6 +231,10 @@ void Application::recreateSwapChain() {
 		return;
 	}
 
+	for (auto &fence : in_flight_fences_) {
+		(void)device_->waitForFences(fence.get(), VK_TRUE, UINT64_MAX);
+	}
+
 	device_->waitIdle();
 
 	image_available_semaphores_.clear();
@@ -235,6 +245,7 @@ void Application::recreateSwapChain() {
 	swap_chain_image_views_.clear();
 
 	swap_chain_.reset();
+	swap_chain_images_.clear();
 
 	SwapChain::createSwapChain(window_.get(), device_.get(), physical_device_,
 	                           surface_.get(), swap_chain_, swap_chain_images_,

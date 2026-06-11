@@ -219,7 +219,8 @@ class Object {
 	 */
 	virtual void
 	DrawObject(const AtlasBuilder &atlas,
-	           std::array<std::vector<InstanceData>, 4> &instance_lists);
+	           std::array<std::vector<InstanceData>, 4> &instance_lists,
+	           ObjectManager &om);
 
 	/**
 	 * @brief イージングによるパラメータの更新。 / Updating parameters by

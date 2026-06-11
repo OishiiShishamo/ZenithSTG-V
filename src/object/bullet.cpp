@@ -10,6 +10,7 @@
 
 #include "collision.h"
 #include "color.h"
+#include "draw_texture.h"
 #include "global.h"
 #include "instance_data.h"
 #include "main.h"
@@ -18,32 +19,15 @@
 #include "vec2d.h"
 
 namespace zenithstgv {
-
 void Bullet::DrawObject(
     const AtlasBuilder &atlas,
-    std::array<std::vector<InstanceData>, 4> &instance_lists) {
+    std::array<std::vector<InstanceData>, 4> &instance_lists,
+    ObjectManager &om) {
 	if (!(flags_ & kIsAlive))
 		return;
-	std::array<Vec2D, 4> world;
-	double half = size_ / 2 * 20;
-	std::array<Vec2D, 4> local = {Vec2D(-half, -half), Vec2D(half, -half),
-	                              Vec2D(half, half), Vec2D(-half, half)};
-
-	for (int i = 0; i < 4; ++i) {
-		Vec2D rot = RotatePoint(local[i], show_angle_ + kPi / 2);
-		world[i] = pos_ + rot;
-	}
-	Sprite spr;
-	spr.pos[0] = world[0].ToNDC(ScreenSize(1920, 1080));
-	spr.pos[1] = world[1].ToNDC(ScreenSize(1920, 1080));
-	spr.pos[2] = world[2].ToNDC(ScreenSize(1920, 1080));
-	spr.pos[3] = world[3].ToNDC(ScreenSize(1920, 1080));
-	spr.color = color_;
-	spr.blend_mode = blend_;
-	spr.blend_pal = pal_;
-	spr.uv_key = style_;
-	instance_lists[static_cast<int>(blend_)].push_back(
-	    spr.toInstanceData(atlas.getEntries().at(spr.uv_key)));
+	DrawTexture::DrawTex(atlas, instance_lists, pos_,
+	                     size_ * om.GetObjectGraphSize(style_), show_angle_,
+	                     style_, color_, blend_, pal_);
 }
 
 int Bullet::ColliCheckObject(ObjectManager &om, Player &player) {
@@ -401,7 +385,7 @@ void BulletManager::RenderBullets(
 		          return a->priority_ < b->priority_;
 	          });
 	for (auto *B : bullet_ptrs) {
-		B->DrawObject(atlas, instance_lists);
+		B->DrawObject(atlas, instance_lists, *this);
 	}
 }
 

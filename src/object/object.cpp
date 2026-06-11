@@ -25,7 +25,8 @@ void Object::UpdateObject(long long t, ObjectManager &om, Player &player) {
 }
 
 void Object::DrawObject(const AtlasBuilder &,
-                        std::array<std::vector<InstanceData>, 4> &) {}
+                        std::array<std::vector<InstanceData>, 4> &,
+                        ObjectManager &) {}
 
 void Object::UpdateEase(long long t) {
 	double elapsed_frame = t - pop_t_;

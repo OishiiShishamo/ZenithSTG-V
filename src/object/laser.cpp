@@ -18,9 +18,9 @@
 #include "vec2d.h"
 
 namespace zenithstgv {
-void Laser::DrawObject(
-    const AtlasBuilder &atlas,
-    std::array<std::vector<InstanceData>, 4> &instance_lists) {
+void Laser::DrawObject(const AtlasBuilder &atlas,
+                       std::array<std::vector<InstanceData>, 4> &instance_lists,
+                       ObjectManager &) {
 	if (!(flags_ & kIsAlive))
 		return;
 
@@ -461,7 +461,7 @@ void LaserManager::RenderLasers(
 		          return a->priority_ < b->priority_;
 	          });
 	for (auto *L : laser_ptrs_) {
-		L->DrawObject(atlas, instance_lists);
+		L->DrawObject(atlas, instance_lists, *this);
 	}
 }
 

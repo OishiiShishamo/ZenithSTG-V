@@ -164,10 +164,10 @@ void Application::mainLoop() {
 				p.start_speed = 6.0;
 				p.end_speed = 6.0;
 				laser_manager_->CreateSmartLaserGroup(t, player_, p);
-				p.way = 16;
-				p.start_speed = 8.0;
-				p.end_speed = 8.0;
-				bullet_manager_->CreateSmartBulletGroup(t, player_, p);
+				// p.way = 16;
+				// p.start_speed = 8.0;
+				// p.end_speed = 8.0;
+				// bullet_manager_->CreateSmartBulletGroup(t, player_, p);
 			}
 		}
 

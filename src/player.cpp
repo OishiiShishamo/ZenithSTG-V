@@ -47,7 +47,7 @@ void Player::SetIsProtect(bool b, std::memory_order order) {
 	}
 }
 
-double Player::AimPlayer(const Vec2D &v) { return Vec2DToAngle(pos_, v); }
+double Player::AimPlayer(const Vec2D &v) const { return Vec2DToAngle(pos_, v); }
 
 double Player::RangePlayer(const Vec2D &v) { return Range(v, pos_); }
 
@@ -153,6 +153,4 @@ void Player::RoutinePlayer(const Keyboard &kb) {
 		SetIsProtect(0);
 	}
 }
-
-Player player_;
 } // namespace zenithstgv

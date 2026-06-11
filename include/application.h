@@ -35,6 +35,7 @@
 #include "utility/time_utl.h"
 
 #include "object/bullet.h"
+#include "object/laser.h"
 #include "object/object.h"
 
 namespace zenithstgv {
@@ -43,7 +44,10 @@ class Application {
 	void run() {
 		initWindow(window_);
 		TextureInit::TexturesInit(atlas_);
-		bullet_manager_.InitManager();
+		bullet_manager_ = std::make_unique<BulletManager>();
+		laser_manager_ = std::make_unique<LaserManager>();
+		bullet_manager_->InitManager();
+		laser_manager_->InitManager();
 		InitKeyboard(kb_);
 		initVulkan();
 		mainLoop();
@@ -111,7 +115,10 @@ class Application {
 
 	Keyboard kb_;
 
-	BulletManager bullet_manager_;
+	Player player_;
+
+	std::unique_ptr<BulletManager> bullet_manager_;
+	std::unique_ptr<LaserManager> laser_manager_;
 
 	void initVulkan();
 	void mainLoop();

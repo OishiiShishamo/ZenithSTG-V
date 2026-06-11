@@ -132,13 +132,29 @@ void Bullet::KillObject(ObjectManager &om) {
 }
 
 void BulletManager::InitManager() {
-	default_bullets_blend["bullet_1"] = BlendMode::kNormal;
+	default_bullets_blend_["bullet_normal"] = BlendMode::kNormal;
+	default_bullets_blend_["bullet_medium"] = BlendMode::kNormal;
+	default_bullets_blend_["bullet_big"] = BlendMode::kAdd;
+	default_bullets_blend_["bullet_scale"] = BlendMode::kNormal;
+	default_bullets_blend_["bullet_light"] = BlendMode::kAdd;
 
-	bullets_graph_size["bullet_1"] = 20;
+	bullets_graph_size_["bullet_normal"] = 20;
+	bullets_graph_size_["bullet_medium"] = 40;
+	bullets_graph_size_["bullet_big"] = 96;
+	bullets_graph_size_["bullet_scale"] = 20;
+	bullets_graph_size_["bullet_light"] = 30;
 
-	bullets_col_size["bullet_1"] = 9;
+	bullets_col_size_["bullet_normal"] = 9;
+	bullets_col_size_["bullet_medium"] = 18;
+	bullets_col_size_["bullet_big"] = 30;
+	bullets_col_size_["bullet_scale"] = 8;
+	bullets_col_size_["bullet_light"] = 6;
 
-	bullets_graze_size["bullet_1"] = 30;
+	bullets_graze_size_["bullet_normal"] = 30;
+	bullets_graze_size_["bullet_medium"] = 50;
+	bullets_graze_size_["bullet_big"] = 90;
+	bullets_graze_size_["bullet_scale"] = 30;
+	bullets_graze_size_["bullet_light"] = 30;
 
 	for (uint32_t i = 0; i < kMaxBullet; i++) {
 		bullet_ptrs[i] = &bullets[i];
@@ -182,8 +198,8 @@ int BulletManager::CreateBullet(
 	bullets[idx].size_ease_type_ = size_ease_type;
 	bullets[idx].size_ease_time_ = size_ease_time;
 	if (aim == kAimTrue) {
-		bullets[idx].start_angle_ = player_.AimPlayer(pos) + start_angle;
-		bullets[idx].end_angle_ = player_.AimPlayer(pos) + end_angle;
+		bullets[idx].start_angle_ = player.AimPlayer(pos) + start_angle;
+		bullets[idx].end_angle_ = player.AimPlayer(pos) + end_angle;
 	} else {
 		bullets[idx].start_angle_ = start_angle;
 		bullets[idx].end_angle_ = end_angle;
@@ -390,18 +406,18 @@ void BulletManager::RenderBullets(
 }
 
 BlendMode BulletManager::GetDefaultObjectBlend(std::string style) {
-	return default_bullets_blend.at(style);
+	return default_bullets_blend_.at(style);
 }
 
 int BulletManager::GetObjectGraphSize(std::string style) {
-	return bullets_graph_size.at(style);
+	return bullets_graph_size_.at(style);
 }
 
 double BulletManager::GetObjectColSize(std::string style) {
-	return bullets_col_size.at(style);
+	return bullets_col_size_.at(style);
 }
 
 double BulletManager::GetObjectGrazeSize(std::string style) {
-	return bullets_graze_size.at(style);
+	return bullets_graze_size_.at(style);
 }
 } // namespace zenithstgv

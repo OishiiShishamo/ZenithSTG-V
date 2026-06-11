@@ -61,7 +61,7 @@ class Player {
 	void SetIsProtect(bool b,
 	                  std::memory_order order = std::memory_order_seq_cst);
 
-	double AimPlayer(const Vec2D &v);
+	double AimPlayer(const Vec2D &v) const;
 	double RangePlayer(const Vec2D &v);
 	void MovePlayer(const Keyboard &kb);
 	void RenderPlayer(const AtlasBuilder &atlas,
@@ -75,8 +75,6 @@ class Player {
 	Vec2D pos_ = kPlayerDefaultPos;
 	Vec2D vec_ = Vec2D(0, 0);
 };
-
-extern Player player_;
 } // namespace zenithstgv
 
 #endif

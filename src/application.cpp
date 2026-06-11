@@ -32,6 +32,7 @@
 #include "utility/time_utl.h"
 
 #include "object/bullet.h"
+#include "object/laser.h"
 #include "object/object.h"
 
 namespace zenithstgv {
@@ -143,33 +144,40 @@ void Application::mainLoop() {
 
 		kb_.Update();
 
-		if (t % 1 == 0) {
-			ObjectParams p;
-			p.pos = Vec2D(960, 540);
-			p.style = "bullet_1";
-			p.color = GamingColor(t);
-			p.blend = BlendMode::kNormal;
-			p.is_col = 1;
-			p.way = 32;
-			p.spread = kTau;
-			p.start_angle = sin(t * kPi / 60) * 60;
-			p.end_angle = sin(t * kPi / 60) * (60 + 30);
-			p.angle_ease_time = 60;
-			p.angle_ease_type = kEaseInQuad;
-			p.start_speed = 6.0;
-			p.end_speed = 6.0;
-			bullet_manager_.CreateSmartBulletGroup(t, player_, p);
+		for (int i = 1; i <= 5; i++) {
+			if (t % 5 == 0) {
+				ObjectParams p;
+				p.pos = Vec2D(960, 540) +
+				        AngleToVec2D(kPi / 180 * 144 * i + kPi / 180 * t) * 200;
+				p.style = "bullet_scale";
+				p.length = 200;
+				p.width = 16;
+				p.color = GamingColor(t);
+				p.blend = BlendMode::kAdd;
+				p.is_col = 1;
+				p.way = 1;
+				p.spread = kTau;
+				p.start_angle = (kPi / 180 * 144 * i + kPi / 360 * t);
+				p.end_angle = (kPi / 180 * 144 * i + kPi / 360 * t) + kPi;
+				p.angle_ease_time = 60;
+				p.angle_ease_type = kEaseInQuad;
+				p.start_speed = 6.0;
+				p.end_speed = 6.0;
+				laser_manager_->CreateSmartLaserGroup(t, player_, p);
+			}
 		}
 
 		player_.RoutinePlayer(kb_);
-		bullet_manager_.MoveBullets(t, player_);
+		bullet_manager_->MoveBullets(t, player_);
+		laser_manager_->MoveLasers(t, player_);
 
 		instance_lists_[0].clear();
 		instance_lists_[1].clear();
 		instance_lists_[2].clear();
 		instance_lists_[3].clear();
 		player_.RenderPlayer(atlas_, instance_lists_);
-		bullet_manager_.RenderBullets(atlas_, instance_lists_);
+		bullet_manager_->RenderBullets(atlas_, instance_lists_);
+		laser_manager_->RenderLasers(atlas_, instance_lists_);
 
 		for (int i = 0; i < 4; i++) {
 			if (!instance_lists_[i].empty()) {

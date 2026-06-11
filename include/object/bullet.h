@@ -145,10 +145,10 @@ class BulletManager : public ObjectManager {
 	std::array<Bullet *, kMaxBullet> bullet_ptrs;
 	std::vector<int> blank_bullets;
 	std::mutex blank_bullets_mutex;
-	std::unordered_map<std::string, BlendMode> default_bullets_blend;
-	std::unordered_map<std::string, int> bullets_graph_size;
-	std::unordered_map<std::string, double> bullets_col_size;
-	std::unordered_map<std::string, double> bullets_graze_size;
+	std::unordered_map<std::string, BlendMode> default_bullets_blend_;
+	std::unordered_map<std::string, int> bullets_graph_size_;
+	std::unordered_map<std::string, double> bullets_col_size_;
+	std::unordered_map<std::string, double> bullets_graze_size_;
 	long long bullet_index = 0;
 
 	void ParallelUpdateBullets(long long t, Player &player,

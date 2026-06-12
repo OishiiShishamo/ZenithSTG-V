@@ -13,12 +13,17 @@ layout(push_constant) uniform PushConstants {
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    vec4 col = texture(texSampler, fragTexCoord);
-    
-	float luma = dot(col.rgb, vec3(0.299, 0.587, 0.114));
-    float mask = smoothstep(0.95, 0.98, luma);
+	vec2 dx = dFdx(fragTexCoord);
+    vec2 dy = dFdy(fragTexCoord);
+    vec4 col = textureGrad(texSampler, fragTexCoord, dx, dy);
+
+	vec3 linRGB = col.rgb * col.rgb;
+    float luma = dot(linRGB, vec3(0.299, 0.587, 0.114));
+
+    float mask = smoothstep(0.92, 0.98, luma);
 
     vec3 rgb = mix(col.rgb, col.rgb * fragInstanceColor.rgb, mask);
 
-    outColor = vec4(rgb, col.a * fragInstanceColor.a);
+	float a = col.a * fragInstanceColor.a;
+    outColor = vec4(rgb, a);
 }

@@ -49,7 +49,9 @@ void Laser::DrawObject(const AtlasBuilder &atlas,
 
 int Laser::ColliCheckObject(ObjectManager &, Player &player) {
 	double r = (length_ * length_ + col_size_ * col_size_) / 4;
-	Vec2D d = pos_ - player.GetPos();
+	Vec2D center =
+	    pos_ + RotatePoint(Vec2D(0, length_ / 2), show_angle_ + kPi / 2);
+	Vec2D d = center - player.GetPos();
 	if (d.GetX() * d.GetX() + d.GetY() * d.GetY() > r) {
 		return 0;
 	}
@@ -77,10 +79,11 @@ void Laser::GrazeObject(ObjectManager &, Player &player) {
 	if ((flags_ & kIsGraze) == 0)
 		return;
 
-	double r = (length_ * length_ + col_size_ * col_size_ +
-	            col_size_ * col_size_ + 10 * 10) /
-	           4;
-	Vec2D d = pos_ - player.GetPos();
+	double expanded = col_size_ + 10;
+	double r = (length_ * length_ + expanded * expanded) / 4;
+	Vec2D center =
+	    pos_ + RotatePoint(Vec2D(0, length_ / 2), show_angle_ + kPi / 2);
+	Vec2D d = center - player.GetPos();
 	if (d.GetX() * d.GetX() + d.GetY() * d.GetY() > r) {
 		return;
 	}

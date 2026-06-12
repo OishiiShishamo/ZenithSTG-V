@@ -145,9 +145,10 @@ void Application::mainLoop() {
 			for (int i = 1; i <= 5; i++) {
 				if (t % 5 == 0) {
 					ObjectParams p;
-					p.pos = Vec2D(960, 540) +
-							AngleToVec2D(kPi / 180 * 144 * i + kPi / 180 * t) * 200;
-					p.style = "bullet_scale";
+					p.pos =
+					    Vec2D(960, 540) +
+					    AngleToVec2D(kPi / 180 * 144 * i + kPi / 180 * t) * 200;
+					p.style = "laser_normal";
 					p.length = 200;
 					p.width = 16;
 					p.color = GamingColor(t);
@@ -155,17 +156,18 @@ void Application::mainLoop() {
 					p.is_col = 1;
 					p.way = 1;
 					p.spread = kTau;
+					p.end_size = 1.0;
 					p.start_angle = (kPi / 180 * 144 * i + kPi / 360 * t);
 					p.end_angle = (kPi / 180 * 144 * i + kPi / 360 * t) + kPi;
 					p.angle_ease_time = 60;
 					p.angle_ease_type = kEaseInQuad;
 					p.start_speed = 6.0;
 					p.end_speed = 6.0;
-					// laser_manager_->CreateSmartLaserGroup(t, player_, p);
-					p.way = 128;
+					laser_manager_->CreateSmartLaserGroup(t, player_, p);
+					p.way = 8;
 					p.start_speed = 8.0;
 					p.end_speed = 8.0;
-					p.style = "bullet_light";
+					p.style = "bullet_normal";
 					bullet_manager_->CreateSmartBulletGroup(t, player_, p);
 				}
 			}

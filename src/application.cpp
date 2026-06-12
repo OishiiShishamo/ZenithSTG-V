@@ -165,6 +165,7 @@ void Application::mainLoop() {
 					p.way = 128;
 					p.start_speed = 8.0;
 					p.end_speed = 8.0;
+					p.style = "bullet_light";
 					bullet_manager_->CreateSmartBulletGroup(t, player_, p);
 				}
 			}

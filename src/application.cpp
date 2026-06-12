@@ -120,12 +120,6 @@ void Application::mainLoop() {
 	while (running) {
 		time_mng.ElapsedTime();
 		int i = 0;
-		while (t != time_mng.target_t_) {
-			t++;
-			i++;
-		}
-		if (i > 1)
-			std::cout << i << std::endl;
 
 		elapsed_time = time_mng.NSec2Double(time_mng.Timer());
 
@@ -144,36 +138,43 @@ void Application::mainLoop() {
 
 		kb_.Update();
 
-		for (int i = 1; i <= 5; i++) {
-			if (t % 5 == 0) {
-				ObjectParams p;
-				p.pos = Vec2D(960, 540) +
-				        AngleToVec2D(kPi / 180 * 144 * i + kPi / 180 * t) * 200;
-				p.style = "bullet_scale";
-				p.length = 200;
-				p.width = 16;
-				p.color = GamingColor(t);
-				p.blend = BlendMode::kAdd;
-				p.is_col = 1;
-				p.way = 1;
-				p.spread = kTau;
-				p.start_angle = (kPi / 180 * 144 * i + kPi / 360 * t);
-				p.end_angle = (kPi / 180 * 144 * i + kPi / 360 * t) + kPi;
-				p.angle_ease_time = 60;
-				p.angle_ease_type = kEaseInQuad;
-				p.start_speed = 6.0;
-				p.end_speed = 6.0;
-				laser_manager_->CreateSmartLaserGroup(t, player_, p);
-				// p.way = 16;
-				// p.start_speed = 8.0;
-				// p.end_speed = 8.0;
-				// bullet_manager_->CreateSmartBulletGroup(t, player_, p);
-			}
-		}
+		while (t != time_mng.target_t_) {
+			t++;
+			i++;
 
-		player_.RoutinePlayer(kb_);
-		bullet_manager_->MoveBullets(t, player_);
-		laser_manager_->MoveLasers(t, player_);
+			for (int i = 1; i <= 5; i++) {
+				if (t % 5 == 0) {
+					ObjectParams p;
+					p.pos = Vec2D(960, 540) +
+							AngleToVec2D(kPi / 180 * 144 * i + kPi / 180 * t) * 200;
+					p.style = "bullet_scale";
+					p.length = 200;
+					p.width = 16;
+					p.color = GamingColor(t);
+					p.blend = BlendMode::kAdd;
+					p.is_col = 1;
+					p.way = 1;
+					p.spread = kTau;
+					p.start_angle = (kPi / 180 * 144 * i + kPi / 360 * t);
+					p.end_angle = (kPi / 180 * 144 * i + kPi / 360 * t) + kPi;
+					p.angle_ease_time = 60;
+					p.angle_ease_type = kEaseInQuad;
+					p.start_speed = 6.0;
+					p.end_speed = 6.0;
+					// laser_manager_->CreateSmartLaserGroup(t, player_, p);
+					p.way = 128;
+					p.start_speed = 8.0;
+					p.end_speed = 8.0;
+					bullet_manager_->CreateSmartBulletGroup(t, player_, p);
+				}
+			}
+
+			player_.RoutinePlayer(kb_);
+			bullet_manager_->MoveBullets(t, player_);
+			laser_manager_->MoveLasers(t, player_);
+		}
+		if (i > 1)
+			std::cout << i << std::endl;
 
 		instance_lists_[0].clear();
 		instance_lists_[1].clear();

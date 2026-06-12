@@ -80,8 +80,8 @@ struct ObjectParams {
 	int is_col = 1;
 	int is_aligned_angle = 1;
 	int is_graze = 1;
-	double start_col_size = 0;
-	double end_col_size = 0;
+	double start_col_size = 1.0;
+	double end_col_size = 1.0;
 	int col_size_ease_type = 0;
 	int col_size_ease_time = 0;
 	double start_size = 1;

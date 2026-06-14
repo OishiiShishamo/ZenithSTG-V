@@ -19,7 +19,7 @@
 
 namespace zenithstgv {
 void Laser::DrawObject(const AtlasBuilder &atlas,
-                       std::array<std::vector<InstanceData>, 4> &instance_lists,
+                       std::array<std::vector<InstanceData>, 5> &instance_lists,
                        ObjectManager &) {
 	if (!(flags_ & kIsAlive))
 		return;
@@ -455,7 +455,7 @@ void LaserManager::MoveLasers(long long t, Player &player) {
 
 void LaserManager::RenderLasers(
     const AtlasBuilder &atlas,
-    std::array<std::vector<InstanceData>, 4> &instance_lists) {
+    std::array<std::vector<InstanceData>, 5> &instance_lists) {
 	std::sort(laser_ptrs_.begin(), laser_ptrs_.end(),
 	          [](const Laser *a, const Laser *b) {
 		          if (a->priority_ == b->priority_) {

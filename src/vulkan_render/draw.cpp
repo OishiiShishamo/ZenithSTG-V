@@ -15,6 +15,7 @@ bool Draw::drawFrame(
     const std::vector<vk::UniqueFramebuffer> &swap_chain_framebuffers,
     const vk::RenderPass &render_pass,
     const std::array<vk::UniquePipeline, 4> &blend_pipelines,
+    const vk::UniquePipeline &font_pipeline,
     const vk::PipelineLayout &pipeline_layout,
     const std::vector<vk::CommandBuffer> &command_buffers,
     const vk::Queue &graphics_queue, const vk::Queue &present_queue,
@@ -23,9 +24,10 @@ bool Draw::drawFrame(
     const std::vector<vk::UniqueFence> &in_flight_fences,
     uint32_t current_frame, const vk::Buffer &vertex_buffer,
     const vk::Buffer &index_buffer, uint32_t indices_size,
-    const std::array<vk::UniqueBuffer, 4> &instance_buffers,
-    const std::array<std::vector<InstanceData>, 4> &instance_lists,
-    const vk::DescriptorSet &descriptor_set, float elapsed_time) {
+    const std::array<vk::UniqueBuffer, 5> &instance_buffers,
+    const std::array<std::vector<InstanceData>, 5> &instance_lists,
+    const vk::DescriptorSet &descriptor_set,
+    const vk::DescriptorSet &font_desctiptor_set, float elapsed_time) {
 
 	(void)device.waitForFences(in_flight_fences[current_frame].get(), VK_TRUE,
 	                           UINT64_MAX);
@@ -50,9 +52,10 @@ bool Draw::drawFrame(
 
 	Command::recordCommandBuffer(
 	    command_buffers[current_frame], imageIndex, swap_chain_extent,
-	    swap_chain_framebuffers, render_pass, blend_pipelines, pipeline_layout,
-	    vertex_buffer, index_buffer, indices_size, instance_buffers,
-	    instance_lists, descriptor_set, elapsed_time);
+	    swap_chain_framebuffers, render_pass, blend_pipelines, font_pipeline,
+	    pipeline_layout, vertex_buffer, index_buffer, indices_size,
+	    instance_buffers, instance_lists, descriptor_set, font_desctiptor_set,
+	    elapsed_time);
 
 	constexpr vk::PipelineStageFlags waitStages =
 	    vk::PipelineStageFlagBits::eColorAttachmentOutput;

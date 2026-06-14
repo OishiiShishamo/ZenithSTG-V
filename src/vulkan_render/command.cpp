@@ -39,11 +39,13 @@ void Command::recordCommandBuffer(
     const std::vector<vk::UniqueFramebuffer> &swap_chain_framebuffers,
     const vk::RenderPass render_pass,
     const std::array<vk::UniquePipeline, 4> &blend_pipelines,
+    const vk::UniquePipeline &font_pipeline,
     const vk::PipelineLayout pipeline_layout, const vk::Buffer vertex_buffer,
     const vk::Buffer index_buffer, const uint32_t indices_size,
-    const std::array<vk::UniqueBuffer, 4> &instance_buffers,
-    const std::array<std::vector<InstanceData>, 4> &instance_lists,
-    const vk::DescriptorSet descriptor_set, const float elapsed_time) {
+    const std::array<vk::UniqueBuffer, 5> &instance_buffers,
+    const std::array<std::vector<InstanceData>, 5> &instance_lists,
+    const vk::DescriptorSet descriptor_set,
+    const vk::DescriptorSet font_descriptor_set, const float elapsed_time) {
 
 	command_buffer.begin(vk::CommandBufferBeginInfo{});
 
@@ -72,14 +74,14 @@ void Command::recordCommandBuffer(
 
 	command_buffer.bindIndexBuffer(index_buffer, 0, vk::IndexType::eUint16);
 
-	command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-	                                  pipeline_layout, 0, descriptor_set,
-	                                  nullptr);
-
 	command_buffer.pushConstants<float>(pipeline_layout,
 	                                    vk::ShaderStageFlagBits::eVertex |
 	                                        vk::ShaderStageFlagBits::eFragment,
 	                                    0, elapsed_time);
+
+	command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+	                                  pipeline_layout, 0, descriptor_set,
+	                                  nullptr);
 
 	for (int i = 0; i < 4; i++) {
 		if (instance_lists[i].empty())
@@ -94,6 +96,23 @@ void Command::recordCommandBuffer(
 
 		command_buffer.drawIndexed(
 		    indices_size, static_cast<uint32_t>(instance_lists[i].size()), 0, 0,
+		    0);
+	}
+
+	if (!instance_lists[4].empty()) {
+		command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+		                                  pipeline_layout, 1,
+		                                  font_descriptor_set, nullptr);
+
+		command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+		                            *font_pipeline);
+
+		const vk::DeviceSize offsets[] = {0};
+		command_buffer.bindVertexBuffers(0, vertex_buffer, offsets);
+		command_buffer.bindVertexBuffers(1, *instance_buffers[4], offsets);
+
+		command_buffer.drawIndexed(
+		    indices_size, static_cast<uint32_t>(instance_lists[4].size()), 0, 0,
 		    0);
 	}
 

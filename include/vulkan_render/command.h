@@ -26,12 +26,14 @@ class Command {
 	    const std::vector<vk::UniqueFramebuffer> &swap_chain_framebuffers,
 	    const vk::RenderPass render_pass,
 	    const std::array<vk::UniquePipeline, 4> &blend_pipelines,
+	    const vk::UniquePipeline &font_pipeline,
 	    const vk::PipelineLayout pipeline_layout,
 	    const vk::Buffer vertex_buffer, const vk::Buffer index_buffer,
 	    const uint32_t indices_size,
-	    const std::array<vk::UniqueBuffer, 4> &instance_buffers,
-	    const std::array<std::vector<InstanceData>, 4> &instance_lists,
-	    const vk::DescriptorSet descriptor_set, const float elapsed_time);
+	    const std::array<vk::UniqueBuffer, 5> &instance_buffers,
+	    const std::array<std::vector<InstanceData>, 5> &instance_lists,
+	    const vk::DescriptorSet descriptor_set,
+	    const vk::DescriptorSet font_descriptor_set, const float elapsed_time);
 };
 } // namespace zenithstgv
 

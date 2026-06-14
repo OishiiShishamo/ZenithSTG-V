@@ -16,7 +16,7 @@ class DrawTexture {
   public:
 	static void
 	DrawTex(const AtlasBuilder &atlas,
-	        std::array<std::vector<InstanceData>, 4> &instance_lists, Vec2D pos,
+	        std::array<std::vector<InstanceData>, 5> &instance_lists, Vec2D pos,
 	        double size, double angle_rad, std::string key, Color color,
 	        BlendMode blend, double blend_pal);
 };

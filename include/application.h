@@ -9,7 +9,9 @@
 #include <SDL3/SDL_vulkan.h>
 #include <vulkan/vulkan.hpp>
 
+#include "font_renderer.h"
 #include "instance_data.h"
+#include "sound_manager.h"
 #include "texture_init.h"
 #include "vertex.h"
 #include "window/window.h"
@@ -43,13 +45,21 @@ class Application {
   public:
 	void run() {
 		initWindow(window_);
+
 		TextureInit::TexturesInit(atlas_);
+		FontRenderer::FontInit(font_atlas_);
+
 		bullet_manager_ = std::make_unique<BulletManager>();
 		laser_manager_ = std::make_unique<LaserManager>();
 		bullet_manager_->InitManager();
 		laser_manager_->InitManager();
+
 		InitKeyboard(kb_);
+
 		initVulkan();
+
+		sound_manager_.Init();
+
 		mainLoop();
 		cleanup();
 	}
@@ -75,6 +85,7 @@ class Application {
 	vk::UniqueRenderPass render_pass_;
 	vk::UniquePipelineLayout pipeline_layout_;
 	std::array<vk::UniquePipeline, 4> blend_pipelines_;
+	vk::UniquePipeline font_pipeline_;
 
 	vk::UniqueCommandPool command_pool_;
 	std::vector<vk::CommandBuffer> command_buffers_;
@@ -97,21 +108,27 @@ class Application {
 	vk::UniqueBuffer index_buffer_;
 	vk::UniqueDeviceMemory index_buffer_memory_;
 
-	std::array<vk::UniqueBuffer, 4> instance_buffers_;
-	std::array<vk::UniqueDeviceMemory, 4> instance_buffer_memories_;
-
-	std::array<std::vector<InstanceData>, 4> instance_lists_;
+	std::array<vk::UniqueBuffer, 5> instance_buffers_;
+	std::array<vk::UniqueDeviceMemory, 5> instance_buffer_memories_;
+	std::array<std::vector<InstanceData>, 5> instance_lists_;
 
 	vk::UniqueImage texture_image_;
 	vk::UniqueDeviceMemory texture_image_memory_;
 	vk::UniqueImageView texture_image_view_;
 	vk::UniqueSampler texture_sampler_;
+	vk::UniqueImage font_texture_image_;
+	vk::UniqueDeviceMemory font_texture_image_memory_;
+	vk::UniqueImageView font_texture_image_view_;
+	vk::UniqueSampler font_texture_sampler_;
 
 	vk::UniqueDescriptorSetLayout descriptor_set_layout_;
 	vk::UniqueDescriptorPool descriptor_pool_;
 	vk::DescriptorSet descriptor_set_;
+	vk::UniqueDescriptorSetLayout font_descriptor_set_layout_;
+	vk::DescriptorSet font_descriptor_set_;
 
 	AtlasBuilder atlas_ = AtlasBuilder(2048, 2048);
+	AtlasBuilder font_atlas_ = AtlasBuilder(4096, 4096);
 
 	Keyboard kb_;
 
@@ -119,6 +136,8 @@ class Application {
 
 	std::unique_ptr<BulletManager> bullet_manager_;
 	std::unique_ptr<LaserManager> laser_manager_;
+
+	SoundManager sound_manager_;
 
 	void initVulkan();
 	void mainLoop();

@@ -2,33 +2,6 @@
 #ifndef ZENITHSTG_SRC_COLOR_H_
 #define ZENITHSTG_SRC_COLOR_H_
 
-// SIMPLE
-
-#define kColorRed 255, 0, 0
-#define kColorGreen 0, 255, 0
-#define kColorBlue 0, 0, 255
-#define kColorYellow 255, 255, 0
-#define kColorAqua 0, 255, 255
-#define kColorCyan 0, 255, 255
-#define kColorPurple 255, 0, 255
-#define kColorOrange 255, 127, 0
-#define kColorWhite 255, 255, 255
-#define kColorGray 127, 127, 127
-#define kColorBlack 0, 0, 0
-
-// NOT-SIMPLE
-
-#define kColorAliceBlue 240, 248, 255
-#define kColorAntiqueWhite 250, 235, 215
-#define kColorAquamarine 127, 255, 212
-#define kColorAzure 240, 255, 255
-#define kColorBeige 245, 245, 220
-#define kColorBisque 255, 228, 196
-#define kColorBlanchedalmond 255, 235, 205
-#define kColorBlueViolet 138, 43, 226
-#define kColorBrown 165, 42, 42
-#define kColorBurlyWood 222, 184, 135
-
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -183,6 +156,36 @@ inline static Color Lerp(const Color &c1, const Color &c2, float t) noexcept {
 Color GetColorHsv(float h, float s, float v);
 
 Color GamingColor(long long t, long long offset = 0, float mul = 1.0);
+
+// Simple Palette.
+
+inline const Color kColorRed = Color255(255, 0, 0);
+inline const Color kColorGreen = Color255(0, 255, 0);
+inline const Color kColorBlue = Color255(0, 0, 255);
+
+inline const Color kColorYellow = Color255(255, 255, 0);
+inline const Color kColorAqua = Color255(0, 255, 255);
+inline const Color kColorCyan = Color255(0, 255, 255);
+
+inline const Color kColorPurple = Color255(255, 0, 255);
+inline const Color kColorOrange = Color255(255, 127, 0);
+
+inline const Color kColorWhite = Color255(255, 255, 255);
+inline const Color kColorGray = Color255(127, 127, 127);
+inline const Color kColorBlack = Color255(0, 0, 0);
+
+// Not Simple Palette.
+
+inline const Color kColorAliceBlue = Color255(240, 248, 255);
+inline const Color kColorAntiqueWhite = Color255(250, 235, 215);
+inline const Color kColorAquamarine = Color255(127, 255, 212);
+inline const Color kColorAzure = Color255(240, 255, 255);
+inline const Color kColorBeige = Color255(245, 245, 220);
+inline const Color kColorBisque = Color255(255, 228, 196);
+inline const Color kColorBlanchedalmond = Color255(255, 235, 205);
+inline const Color kColorBlueViolet = Color255(138, 43, 226);
+inline const Color kColorBrown = Color255(165, 42, 42);
+inline const Color kColorBurlyWood = Color255(222, 184, 135);
 } // namespace zenithstgv
 
 #endif

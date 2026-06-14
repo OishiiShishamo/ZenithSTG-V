@@ -81,7 +81,7 @@ void Player::MovePlayer(const Keyboard &kb) {
 
 void Player::RenderPlayer(
     const AtlasBuilder &atlas,
-    std::array<std::vector<InstanceData>, 4> &instance_lists) {
+    std::array<std::vector<InstanceData>, 5> &instance_lists) {
 	std::array<Vec2D, 4> world;
 	int half_x = 128 / 2;
 	int half_y = 128 / 2;

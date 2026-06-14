@@ -7,6 +7,7 @@
 #include <SDL3/SDL_vulkan.h>
 #include <vulkan/vulkan.hpp>
 
+#include "font_renderer.h"
 #include "main.h"
 #include "vertex.h"
 #include "window/window.h"
@@ -58,13 +59,19 @@ void Application::initVulkan() {
 
 	Descriptor::createDescriptorSetLayout(device_.get(),
 	                                      descriptor_set_layout_);
+	Descriptor::createDescriptorSetLayout(device_.get(),
+	                                      font_descriptor_set_layout_);
 
 	RenderPass::createRenderPass(device_.get(), swap_chain_image_format_,
 	                             render_pass_);
 
 	GraphicsPipeline::createGraphicsPipelines(
 	    device_.get(), render_pass_.get(), descriptor_set_layout_.get(),
-	    pipeline_layout_, blend_pipelines_);
+	    font_descriptor_set_layout_.get(), pipeline_layout_, blend_pipelines_);
+
+	GraphicsPipeline::createFontPipeline(device_.get(), render_pass_.get(),
+	                                     pipeline_layout_.get(),
+	                                     font_pipeline_);
 
 	FrameBuffer::createFramebuffers(
 	    device_.get(), swap_chain_extent_, swap_chain_image_views_,
@@ -89,20 +96,32 @@ void Application::initVulkan() {
 	Texture::createTextureImage(
 	    device_.get(), physical_device_, command_pool_.get(), graphics_queue_,
 	    atlas_.getImageData(), texture_image_, texture_image_memory_);
+	Texture::createTextureImage(device_.get(), physical_device_,
+	                            command_pool_.get(), graphics_queue_,
+	                            font_atlas_.getImageData(), font_texture_image_,
+	                            font_texture_image_memory_);
 
 	Texture::createTextureImageView(device_.get(), texture_image_.get(),
 	                                texture_image_view_);
+	Texture::createTextureImageView(device_.get(), font_texture_image_.get(),
+	                                font_texture_image_view_);
 
 	Texture::createTextureSampler(device_.get(), physical_device_,
 	                              texture_sampler_);
+	Texture::createTextureSampler(device_.get(), physical_device_,
+	                              font_texture_sampler_);
 
 	Descriptor::createDescriptorPool(device_.get(), descriptor_pool_);
 
 	Descriptor::createDescriptorSet(
 	    device_.get(), descriptor_pool_.get(), descriptor_set_layout_.get(),
 	    texture_image_view_.get(), texture_sampler_.get(), descriptor_set_);
+	Descriptor::createDescriptorSet(
+	    device_.get(), descriptor_pool_.get(),
+	    font_descriptor_set_layout_.get(), font_texture_image_view_.get(),
+	    font_texture_sampler_.get(), font_descriptor_set_);
 
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 5; i++) {
 		InstanceBuffer::createInstanceBuffer(
 		    device_.get(), physical_device_, kMaxInstances,
 		    instance_buffers_[i], instance_buffer_memories_[i]);
@@ -179,15 +198,11 @@ void Application::mainLoop() {
 		if (i > 1)
 			std::cout << i << std::endl;
 
-		instance_lists_[0].clear();
-		instance_lists_[1].clear();
-		instance_lists_[2].clear();
-		instance_lists_[3].clear();
 		player_.RenderPlayer(atlas_, instance_lists_);
 		bullet_manager_->RenderBullets(atlas_, instance_lists_);
 		laser_manager_->RenderLasers(atlas_, instance_lists_);
 
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < 5; i++) {
 			if (!instance_lists_[i].empty()) {
 				InstanceBuffer::updateInstanceBuffer(
 				    device_.get(), instance_buffer_memories_[i].get(),
@@ -198,16 +213,22 @@ void Application::mainLoop() {
 		if (Draw::drawFrame(
 		        device_.get(), swap_chain_.get(), swap_chain_extent_,
 		        swap_chain_framebuffers_, render_pass_.get(), blend_pipelines_,
-		        pipeline_layout_.get(), command_buffers_, graphics_queue_,
-		        present_queue_, image_available_semaphores_,
+		        font_pipeline_, pipeline_layout_.get(), command_buffers_,
+		        graphics_queue_, present_queue_, image_available_semaphores_,
 		        render_finished_semaphores_, in_flight_fences_, current_frame_,
 		        vertex_buffer_.get(), index_buffer_.get(),
 		        static_cast<uint32_t>(indices_.size()), instance_buffers_,
-		        instance_lists_, descriptor_set_,
+		        instance_lists_, descriptor_set_, font_descriptor_set_,
 		        static_cast<float>(elapsed_time))) {
 
 			recreateSwapChain();
 		}
+
+		instance_lists_[0].clear();
+		instance_lists_[1].clear();
+		instance_lists_[2].clear();
+		instance_lists_[3].clear();
+		instance_lists_[4].clear();
 
 		current_frame_ = (current_frame_ + 1) % kMaxFramesInFlight;
 

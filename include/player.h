@@ -65,7 +65,7 @@ class Player {
 	double RangePlayer(const Vec2D &v);
 	void MovePlayer(const Keyboard &kb);
 	void RenderPlayer(const AtlasBuilder &atlas,
-	                  std::array<std::vector<InstanceData>, 4> &instance_lists);
+	                  std::array<std::vector<InstanceData>, 5> &instance_lists);
 	void Shot(const Keyboard &kb);
 	bool TryHit();
 	void HitPlayer();

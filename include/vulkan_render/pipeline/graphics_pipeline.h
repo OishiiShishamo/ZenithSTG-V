@@ -15,8 +15,14 @@ class GraphicsPipeline {
 	static void
 	createGraphicsPipelines(vk::Device device, vk::RenderPass render_pass,
 	                        vk::DescriptorSetLayout descriptor_set_layout,
+	                        vk::DescriptorSetLayout font_descriptor_set_layout,
 	                        vk::UniquePipelineLayout &pipeline_layout,
 	                        std::array<vk::UniquePipeline, 4> &pipelines);
+
+	static void createFontPipeline(vk::Device device,
+	                               vk::RenderPass render_pass,
+	                               const vk::PipelineLayout pipeline_layout,
+	                               vk::UniquePipeline &font_pipeline);
 
 	static vk::UniqueShaderModule
 	createShaderModule(const std::vector<char> &code, vk::Device device);

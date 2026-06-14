@@ -60,7 +60,7 @@ class Bullet : public Object {
 	 * @brief 弾の描画 / Bullet Drawing.
 	 */
 	void DrawObject(const AtlasBuilder &atlas,
-	                std::array<std::vector<InstanceData>, 4> &instance_lists,
+	                std::array<std::vector<InstanceData>, 5> &instance_lists,
 	                ObjectManager &om) override;
 
   private:
@@ -130,7 +130,7 @@ class BulletManager : public ObjectManager {
 
 	void
 	RenderBullets(const AtlasBuilder &atlas,
-	              std::array<std::vector<InstanceData>, 4> &instance_lists);
+	              std::array<std::vector<InstanceData>, 5> &instance_lists);
 
 	BlendMode GetDefaultObjectBlend(std::string style) override;
 

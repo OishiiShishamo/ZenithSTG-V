@@ -21,7 +21,7 @@
 namespace zenithstgv {
 void Bullet::DrawObject(
     const AtlasBuilder &atlas,
-    std::array<std::vector<InstanceData>, 4> &instance_lists,
+    std::array<std::vector<InstanceData>, 5> &instance_lists,
     ObjectManager &om) {
 	if (!(flags_ & kIsAlive))
 		return;
@@ -376,7 +376,7 @@ void BulletManager::MoveBullets(long long t, Player &player) {
 
 void BulletManager::RenderBullets(
     const AtlasBuilder &atlas,
-    std::array<std::vector<InstanceData>, 4> &instance_lists) {
+    std::array<std::vector<InstanceData>, 5> &instance_lists) {
 	std::sort(bullet_ptrs.begin(), bullet_ptrs.end(),
 	          [](const Bullet *a, const Bullet *b) {
 		          if (a->priority_ == b->priority_) {

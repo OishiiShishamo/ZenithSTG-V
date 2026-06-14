@@ -61,7 +61,7 @@ class Laser : public Object {
 	 * @brief レーザーの描画 / Laser Drawing.
 	 */
 	void DrawObject(const AtlasBuilder &atlas,
-	                std::array<std::vector<InstanceData>, 4> &instance_lists,
+	                std::array<std::vector<InstanceData>, 5> &instance_lists,
 	                ObjectManager &om) override;
 
   private:
@@ -148,7 +148,7 @@ class LaserManager : public ObjectManager {
 	 * @brief レーザーの描画 / Laser Drawing.
 	 */
 	void RenderLasers(const AtlasBuilder &atlas,
-	                  std::array<std::vector<InstanceData>, 4> &instance_lists);
+	                  std::array<std::vector<InstanceData>, 5> &instance_lists);
 
 	BlendMode GetDefaultObjectBlend(std::string style) override;
 	int GetObjectGraphSize(std::string style) override;

@@ -56,3 +56,15 @@ add_custom_command(TARGET zenith-stg-v POST_BUILD
     ${CMAKE_SOURCE_DIR}/textures
     $<TARGET_FILE_DIR:zenith-stg-v>/textures
 )
+
+add_custom_command(TARGET zenith-stg-v POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/sounds
+    $<TARGET_FILE_DIR:zenith-stg-v>/sounds
+)
+
+add_custom_command(TARGET zenith-stg-v POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/fonts
+    $<TARGET_FILE_DIR:zenith-stg-v>/fonts
+)

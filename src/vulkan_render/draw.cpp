@@ -40,13 +40,13 @@ bool Draw::drawFrame(
 		return true;
 	}
 
-	device.resetFences(in_flight_fences[current_frame].get());
-
 	if (result != vk::Result::eSuccess &&
 	    result != vk::Result::eSuboptimalKHR) {
 
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
+
+	device.resetFences(in_flight_fences[current_frame].get());
 
 	command_buffers[current_frame].reset();
 
@@ -76,10 +76,10 @@ bool Draw::drawFrame(
 
 	result = present_queue.presentKHR(presentInfo);
 
-	if (result == vk::Result::eErrorOutOfDateKHR) {
-		return true;
-	}
-	if (result == vk::Result::eSuboptimalKHR) {
+	if (result == vk::Result::eErrorOutOfDateKHR ||
+	    result == vk::Result::eSuboptimalKHR) {
+		graphics_queue.waitIdle();
+		present_queue.waitIdle();
 		return true;
 	}
 

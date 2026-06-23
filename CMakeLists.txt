@@ -17,7 +17,11 @@ file(GLOB_RECURSE SRC CONFIGURE_DEPENDS
     src/*.cpp
 )
 
-add_executable(zenith-stg-v ${SRC})
+if(WIN32)
+    add_executable(zenith-stg-v WIN32 ${SRC})
+else()
+    add_executable(zenith-stg-v ${SRC})
+endif()
 
 target_include_directories(zenith-stg-v PRIVATE include)
 
@@ -25,14 +29,22 @@ target_link_libraries(zenith-stg-v PRIVATE
     Vulkan::Vulkan
     SDL3::SDL3
     glm::glm
-	TBB::tbb
+    TBB::tbb
 )
+
+if(WIN32)
+    target_link_libraries(zenith-stg-v PRIVATE SDL3::SDL3_main)
+endif()
 
 if(MSVC)
 
     target_compile_options(zenith-stg-v PRIVATE
         /W4
         /permissive-
+    )
+    target_compile_definitions(zenith-stg-v PRIVATE
+        VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS
+        _CRT_SECURE_NO_WARNINGS
     )
 
 else()
@@ -41,6 +53,10 @@ else()
         -Wall
         -Wextra
         -Wpedantic
+    )
+
+    target_compile_definitions(zenith-stg-v PRIVATE
+        VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS
     )
 
 endif()
@@ -68,3 +84,16 @@ add_custom_command(TARGET zenith-stg-v POST_BUILD
     ${CMAKE_SOURCE_DIR}/fonts
     $<TARGET_FILE_DIR:zenith-stg-v>/fonts
 )
+
+if(WIN32)
+    add_custom_command(TARGET zenith-stg-v POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:SDL3::SDL3>
+        $<TARGET_FILE_DIR:zenith-stg-v>
+    )
+    add_custom_command(TARGET zenith-stg-v POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:TBB::tbb>
+        $<TARGET_FILE_DIR:zenith-stg-v>
+    )
+endif()

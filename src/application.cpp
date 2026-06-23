@@ -242,6 +242,43 @@ void Application::mainLoop() {
 	graphics_queue_.waitIdle();
 	present_queue_.waitIdle();
 	device_->waitIdle();
+
+	swap_chain_framebuffers_.clear();
+	swap_chain_image_views_.clear();
+	swap_chain_.reset();
+	swap_chain_images_.clear();
+	image_available_semaphores_.clear();
+	render_finished_semaphores_.clear();
+	in_flight_fences_.clear();
+	command_buffers_.clear();
+	command_pool_.reset();
+	font_pipeline_.reset();
+	for (auto &p : blend_pipelines_)
+		p.reset();
+	pipeline_layout_.reset();
+	render_pass_.reset();
+	font_descriptor_set_layout_.reset();
+	descriptor_pool_.reset();
+	descriptor_set_layout_.reset();
+	font_texture_sampler_.reset();
+	font_texture_image_view_.reset();
+	font_texture_image_.reset();
+	font_texture_image_memory_.reset();
+	texture_sampler_.reset();
+	texture_image_view_.reset();
+	texture_image_.reset();
+	texture_image_memory_.reset();
+	for (int i = 0; i < 5; i++) {
+		instance_buffers_[i].reset();
+		instance_buffer_memories_[i].reset();
+	}
+	index_buffer_.reset();
+	index_buffer_memory_.reset();
+	vertex_buffer_.reset();
+	vertex_buffer_memory_.reset();
+	device_.reset();
+	surface_.reset();
+	instance_.reset();
 }
 
 void Application::cleanup() { SDL_Quit(); }
@@ -252,25 +289,28 @@ void Application::recreateSwapChain() {
 
 	SDL_GetWindowSizeInPixels(window_.get(), &width, &height);
 
-	if (width == 0 || height == 0) {
-		return;
+	while (width == 0 || height == 0) {
+		SDL_Event event;
+		while (SDL_PollEvent(&event)) {
+			if (event.type == SDL_EVENT_QUIT) {
+				return;
+			}
+		}
+		SDL_GetWindowSizeInPixels(window_.get(), &width, &height);
 	}
 
-	for (auto &fence : in_flight_fences_) {
-		(void)device_->waitForFences(fence.get(), VK_TRUE, UINT64_MAX);
-	}
-
+	graphics_queue_.waitIdle();
+	present_queue_.waitIdle();
 	device_->waitIdle();
+
+	swap_chain_framebuffers_.clear();
+	swap_chain_image_views_.clear();
+	swap_chain_.reset();
+	swap_chain_images_.clear();
 
 	image_available_semaphores_.clear();
 	render_finished_semaphores_.clear();
 	in_flight_fences_.clear();
-
-	swap_chain_framebuffers_.clear();
-	swap_chain_image_views_.clear();
-
-	swap_chain_.reset();
-	swap_chain_images_.clear();
 
 	SwapChain::createSwapChain(window_.get(), device_.get(), physical_device_,
 	                           surface_.get(), swap_chain_, swap_chain_images_,
@@ -287,5 +327,7 @@ void Application::recreateSwapChain() {
 	SyncObjects::createSyncObjects(
 	    device_.get(), swap_chain_.get(), image_available_semaphores_,
 	    render_finished_semaphores_, in_flight_fences_);
+
+	current_frame_ = 0;
 }
 } // namespace zenithstgv
